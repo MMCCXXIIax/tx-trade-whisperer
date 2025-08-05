@@ -44,9 +44,8 @@ interface AppState {
   last_signal: LastSignal | null;
 }
 
-const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://your-replit-name.your-username.repl.co' 
-  : 'http://localhost:8080';
+// Replace with your actual Replit URL
+const API_BASE = 'https://your-actual-replit-url.repl.co';
 
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
