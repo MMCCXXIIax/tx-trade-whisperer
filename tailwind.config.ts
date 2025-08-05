@@ -52,6 +52,13 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// TX specific colors
+				'tx-green': '#00ff88',
+				'tx-black': '#121212',
+				'tx-gray': '#1e1e1e',
+				'tx-red': '#ff5555',
+				'tx-blue': '#0066ff',
+				'tx-orange': '#ff9900',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',

@@ -1,6 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* TX Color Palette */
+  --tx-green: #00ff88;
+  --tx-black: #121212;
+  --tx-gray: #1e1e1e;
+  --tx-red: #ff5555;
+  --tx-blue: #0066ff;
+  --tx-orange: #ff9900;
+
+  /* Semantic tokens */
+  --background: var(--tx-black);
+  --foreground: #ffffff;
+  --primary: var(--tx-green);
+  --primary-foreground: var(--tx-black);
+  --secondary: var(--tx-gray);
+  --secondary-foreground: #ffffff;
+  --accent: var(--tx-blue);
+  --accent-foreground: #ffffff;
+  --destructive: var(--tx-red);
+  --destructive-foreground: #ffffff;
+  --muted: #666666;
+  --muted-foreground: #aaaaaa;
+  --card: var(--tx-gray);
+  --card-foreground: #ffffff;
+  --border: #333333;
+  --input: #252525;
+  --ring: var(--tx-green);
+
+  /* Terminal effects */
+  --terminal-glow: 0 0 20px var(--tx-green);
+  --terminal-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
+  
+  /* Animations */
+  --pulse-glow: pulse-glow 2s infinite;
+  --flicker: flicker 0.15s infinite linear;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px var(--tx-green), 0 0 10px var(--tx-green), 0 0 15px var(--tx-green);
+  }
+  50% { 
+    box-shadow: 0 0 10px var(--tx-green), 0 0 20px var(--tx-green), 0 0 30px var(--tx-green);
+  }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes terminal-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+
+body {
+  font-family: 'Space Mono', monospace;
+  background: var(--background);
+  color: var(--foreground);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.terminal-container {
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--tx-green), transparent);
+  animation: terminal-scan 3s infinite;
+  z-index: 10;
+}
+
+.alert-glow {
+  animation: var(--pulse-glow);
+  border: 2px solid var(--tx-red);
+}
+
+.pattern-detected {
+  background: var(--accent);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-idle {
+  color: var(--muted);
+}
+
+.status-error {
+  color: var(--destructive);
+}
+
+.tx-button {
+  font-family: 'Space Mono', monospace;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+
+.tx-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--terminal-glow);
+}
+
+.tx-button-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.tx-button-secondary {
+  background: var(--secondary);
+  color: var(--foreground);
+}
+
+.tx-button-destructive {
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+}
+
+.tx-button-accent {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.price-display {
+  font-feature-settings: "tnum";
+  font-weight: bold;
+}
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
