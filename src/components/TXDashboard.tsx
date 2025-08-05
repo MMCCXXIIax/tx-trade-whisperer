@@ -45,7 +45,7 @@ interface AppState {
 }
 
 const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://replit.com/@robertmanegabeb/TX-with-DeepSeek' 
+  ? 'https://446d0049-85a3-42b8-af8d-1b8de4387858-00-3abv9kw983fr2.janeway.replit.dev' 
   : 'http://localhost:8080';
 
 const TXDashboard: React.FC = () => {
