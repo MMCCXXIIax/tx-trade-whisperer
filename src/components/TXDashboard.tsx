@@ -45,7 +45,7 @@ interface AppState {
 }
 
 const API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://your-backend-url.com' 
+  ? 'https://your-replit-name.your-username.repl.co' 
   : 'http://localhost:8080';
 
 const TXDashboard: React.FC = () => {
