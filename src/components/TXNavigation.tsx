@@ -9,7 +9,9 @@ import {
   X,
   Zap,
   Bell,
-  DollarSign
+  DollarSign,
+  FileText,
+  PieChart
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
@@ -29,7 +31,9 @@ const TXNavigation: React.FC<TXNavigationProps> = ({
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
     { id: 'trading', label: 'Trading View', icon: BarChart3 },
-    { id: 'alerts', label: 'Alerts', icon: Bell },
+    { id: 'alerts', label: 'Alert Center', icon: Bell },
+    { id: 'logs', label: 'Detection Logs', icon: FileText },
+    { id: 'paper-trading', label: 'Paper Trading', icon: PieChart },
     { id: 'performance', label: 'Performance', icon: DollarSign },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];

@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import TXDashboard from '@/components/TXDashboard';
 import TXNavigation from '@/components/TXNavigation';
 import TradingView from '@/components/TradingView';
+import AlertCenter from '@/components/AlertCenter';
+import DetectionLogs from '@/components/DetectionLogs';
+import PaperTrading from '@/components/PaperTrading';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Settings, Bell, DollarSign } from 'lucide-react';
+import { BarChart3, Settings, Bell, DollarSign, FileText, TrendingUp } from 'lucide-react';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -40,7 +43,11 @@ const Index = () => {
       case 'trading':
         return <TradingView />;
       case 'alerts':
-        return <AlertsPage />;
+        return <AlertCenter />;
+      case 'logs':
+        return <DetectionLogs />;
+      case 'paper-trading':
+        return <PaperTrading />;
       case 'performance':
         return <PerformancePage />;
       case 'settings':
