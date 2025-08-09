@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+/* Modern fonts already imported in index.html */
 
 @tailwind base;
 @tailwind components;
@@ -61,7 +61,7 @@
 }
 
 body {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   background: var(--background);
   color: var(--foreground);
   margin: 0;
@@ -112,12 +112,12 @@ body {
 }
 
 .tx-button {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Inter', sans-serif;
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px 12px;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   text-transform: uppercase;
@@ -202,7 +202,12 @@ body {
   background: var(--input);
   border: 1px solid var(--border);
   color: var(--foreground);
-  font-family: 'Space Mono', monospace;
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+.trading-numbers {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-feature-settings: "tnum";
 }
 
 .terminal-input:focus {
