@@ -49,7 +49,7 @@ const API_BASE = 'https://446d0049-85a3-42b8-af8d-1b8de4387858-00-3abv9kw983fr2.
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
   const [userCount, setUserCount] = useState(12);
-  const [countdown, setCountdown] = useState(180);
+  const [countdown, setCountdown] = useState(120);
   const [activeAlert, setActiveAlert] = useState<Alert | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
