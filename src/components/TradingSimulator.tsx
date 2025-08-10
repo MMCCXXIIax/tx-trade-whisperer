@@ -21,6 +21,7 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface Position {
   symbol: string;
@@ -40,6 +41,8 @@ interface TradingStats {
   balance: number;
 }
 
+const API_BASE = 'https://446d0049-85a3-42b8-af8d-1b8de4387858-00-3abv9kw983fr2.janeway.replit.dev:8080';
+
 const TradingSimulator: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('bitcoin');
   const [quantity, setQuantity] = useState(1);
@@ -55,24 +58,35 @@ const TradingSimulator: React.FC = () => {
     balance: 10000
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [marketData, setMarketData] = useState<any>(null);
+const [marketData, setMarketData] = useState<any>(null);
+const [priceSeries, setPriceSeries] = useState<{ time: string; price: number }[]>([]);
 
-  const symbols = [
-    { value: 'bitcoin', label: 'Bitcoin (BTC)', price: 67000 },
-    { value: 'ethereum', label: 'Ethereum (ETH)', price: 3500 },
-    { value: 'solana', label: 'Solana (SOL)', price: 150 },
-    { value: 'cardano', label: 'Cardano (ADA)', price: 0.45 },
-    { value: 'polygon', label: 'Polygon (MATIC)', price: 0.85 }
-  ];
+const symbols = [
+  { value: 'bitcoin', label: 'Bitcoin (BTC)' },
+  { value: 'ethereum', label: 'Ethereum (ETH)' },
+  { value: 'solana', label: 'Solana (SOL)' },
+  { value: 'cardano', label: 'Cardano (ADA)' },
+  { value: 'polygon', label: 'Polygon (MATIC)' }
+];
 
   // Fetch live market data
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const response = await fetch('https://446d0049-85a3-42b8-af8d-1b8de4387858-00-3abv9kw983fr2.janeway.replit.dev:8080/api/scan');
+        const response = await fetch(`${API_BASE}/api/scan`);
         if (response.ok) {
           const data = await response.json();
           setMarketData(data);
+
+          // append current price to series for the selected symbol
+          const res = data?.last_scan?.results?.find((r: any) => r.symbol === selectedSymbol);
+          if (res?.price) {
+            const priceNum = parseFloat(String(res.price).replace(/[^0-9.-]+/g, ''));
+            setPriceSeries((prev) => {
+              const next = [...prev, { time: new Date().toLocaleTimeString(), price: priceNum }];
+              return next.slice(-120); // keep last 120 points
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to fetch market data:', error);
@@ -80,15 +94,15 @@ const TradingSimulator: React.FC = () => {
     };
 
     fetchMarketData();
-    const interval = setInterval(fetchMarketData, 30000); // Update every 30s
+    const interval = setInterval(fetchMarketData, 15000); // Update every 15s
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedSymbol]);
 
   // Fetch positions
   useEffect(() => {
     const fetchPositions = async () => {
       try {
-        const response = await fetch('https://446d0049-85a3-42b8-af8d-1b8de4387858-00-3abv9kw983fr2.janeway.replit.dev:8080/api/paper-trades');
+        const response = await fetch(`${API_BASE}/api/paper-trades`);
         if (response.ok) {
           const data = await response.json();
           setPositions(data.paper_trades || []);
@@ -101,92 +115,99 @@ const TradingSimulator: React.FC = () => {
     fetchPositions();
   }, []);
 
-  const getCurrentPrice = (symbol: string) => {
-    if (marketData?.last_scan?.results) {
-      const result = marketData.last_scan.results.find((r: any) => r.symbol === symbol);
-      if (result?.price) {
-        return parseFloat(result.price.replace(/[^0-9.-]+/g, ''));
-      }
+const getCurrentPrice = (symbol: string) => {
+  const result = marketData?.last_scan?.results?.find((r: any) => r.symbol === symbol);
+  if (result?.price) {
+    return parseFloat(String(result.price).replace(/[^0-9.-]+/g, ''));
+  }
+  return 0; // unknown
+};
+
+const executeTrade = async (side: 'BUY' | 'SELL') => {
+  setIsLoading(true);
+  try {
+    const currentPrice = orderType === 'market' ? getCurrentPrice(selectedSymbol) : parseFloat(price);
+    if (orderType === 'market' && (!currentPrice || currentPrice <= 0)) {
+      toast.error('Live price unavailable for market order');
+      return;
     }
-    return symbols.find(s => s.value === symbol)?.price || 0;
-  };
 
-  const executeTrade = async (side: 'BUY' | 'SELL') => {
-    setIsLoading(true);
-    try {
-      const currentPrice = orderType === 'market' ? getCurrentPrice(selectedSymbol) : parseFloat(price);
-      const tradeValue = currentPrice * quantity;
+    const response = await fetch(`${API_BASE}/api/paper-trades`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbol: selectedSymbol,
+        side: side.toLowerCase(),
+        price: currentPrice,
+        qty: quantity,
+        pattern: 'Manual',
+        confidence: 1.0,
+      }),
+    });
 
-      if (side === 'BUY' && tradeValue > balance) {
-        toast.error('Insufficient balance for this trade');
-        return;
-      }
-
-      const response = await fetch('https://446d0049-85a3-42b8-af8d-1b8de4387858-00-3abv9kw983fr2.janeway.replit.dev:8080/api/paper-trade', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          symbol: selectedSymbol.toUpperCase(),
-          action: side,
-          quantity: quantity,
-          price: currentPrice
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(`${side} order executed for ${quantity} ${selectedSymbol.toUpperCase()}`);
-        
-        // Update balance
-        if (side === 'BUY') {
-          setBalance(prev => prev - tradeValue);
-        } else {
-          setBalance(prev => prev + tradeValue);
+    const res = await response.json();
+    if (response.ok && res?.status === 'success') {
+      toast.success(`${side} order executed: ${quantity} ${selectedSymbol}`);
+      setQuantity(1);
+      setPrice('');
+      // Refresh positions
+      try {
+        const posRes = await fetch(`${API_BASE}/api/paper-trades`);
+        if (posRes.ok) {
+          const data = await posRes.json();
+          setPositions(data.paper_trades || []);
         }
-
-        // Reset form
-        setQuantity(1);
-        setPrice('');
-        
-        // Refresh positions
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        toast.error('Failed to execute trade');
-      }
-    } catch (error) {
-      toast.error('Error executing trade');
-      console.error('Trade error:', error);
-    } finally {
-      setIsLoading(false);
+      } catch {}
+    } else {
+      toast.error(res?.message || 'Failed to execute trade');
     }
-  };
+  } catch (error) {
+    toast.error('Error executing trade');
+    console.error('Trade error:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-  const closePosition = async (symbol: string) => {
-    try {
-      const response = await fetch('https://446d0049-85a3-42b8-af8d-1b8de4387858-00-3abv9kw983fr2.janeway.replit.dev:8080/api/close-position', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ symbol: symbol.toUpperCase() }),
-      });
-
-      if (response.ok) {
-        toast.success(`Position closed for ${symbol.toUpperCase()}`);
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      } else {
-        toast.error('Failed to close position');
-      }
-    } catch (error) {
-      toast.error('Error closing position');
-      console.error('Close position error:', error);
+const closePosition = async (symbol: string) => {
+  try {
+    let currentPrice = getCurrentPrice(symbol);
+    if (!currentPrice || currentPrice <= 0) {
+      // attempt refresh
+      try {
+        const r = await fetch(`${API_BASE}/api/scan`);
+        const d = await r.json();
+        const found = d?.last_scan?.results?.find((x: any) => x.symbol === symbol);
+        if (found?.price) currentPrice = parseFloat(String(found.price).replace(/[^0-9.-]+/g, ''));
+      } catch {}
     }
-  };
+    if (!currentPrice || currentPrice <= 0) {
+      toast.error('Live price unavailable to close position');
+      return;
+    }
+
+    const response = await fetch(`${API_BASE}/api/close-position`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, price: currentPrice }),
+    });
+
+    const res = await response.json();
+    if (response.ok && res?.status === 'success') {
+      toast.success(`Position closed for ${symbol}`);
+      const posRes = await fetch(`${API_BASE}/api/paper-trades`);
+      if (posRes.ok) {
+        const data = await posRes.json();
+        setPositions(data.paper_trades || []);
+      }
+    } else {
+      toast.error(res?.message || 'Failed to close position');
+    }
+  } catch (error) {
+    toast.error('Error closing position');
+    console.error('Close position error:', error);
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -205,9 +226,9 @@ const TradingSimulator: React.FC = () => {
             </CardTitle>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-xs text-muted-foreground font-medium">Account Balance</div>
+                <div className="text-xs text-muted-foreground font-medium">{selectedSymbol.toUpperCase()} Price</div>
                 <div className="text-lg font-bold text-tx-green trading-numbers">
-                  ${balance.toLocaleString()}
+                  {getCurrentPrice(selectedSymbol) > 0 ? `$${getCurrentPrice(selectedSymbol).toLocaleString()}` : '—'}
                 </div>
               </div>
             </div>
@@ -218,56 +239,71 @@ const TradingSimulator: React.FC = () => {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Trading Interface */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-4 gap-4">
-            <Card className="terminal-container border-tx-blue/30">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <Wallet className="w-4 h-4 text-tx-blue" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">P&L Today</div>
-                    <div className="text-sm font-bold text-tx-green trading-numbers">+$245.67</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="terminal-container border-tx-orange/30">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-tx-orange" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Win Rate</div>
-                    <div className="text-sm font-bold text-tx-orange trading-numbers">72%</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="terminal-container border-tx-green/30">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-tx-green" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Total Trades</div>
-                    <div className="text-sm font-bold text-tx-green trading-numbers">24</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="terminal-container border-tx-red/30">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2">
-                  <PieChart className="w-4 h-4 text-tx-red" />
-                  <div>
-                    <div className="text-xs text-muted-foreground">Positions</div>
-                    <div className="text-sm font-bold text-tx-red trading-numbers">{positions.length}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+{/* Real-Time Chart */}
+<Card className="terminal-container">
+  <CardHeader>
+    <CardTitle className="text-tx-green text-lg font-semibold">{symbols.find(s=>s.value===selectedSymbol)?.label} — Real-Time</CardTitle>
+  </CardHeader>
+  <CardContent style={{ height: 280 }}>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={priceSeries} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="time" hide />
+        <YAxis domain={['auto','auto']} tickFormatter={(v)=>`$${Number(v).toLocaleString()}`} width={70} />
+        <Tooltip formatter={(v)=>`$${Number(v).toLocaleString()}`} labelFormatter={(l)=>`Time: ${l}`} />
+        <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} isAnimationActive={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  </CardContent>
+</Card>
+
+{/* Quick Stats */}
+<div className="grid grid-cols-4 gap-4">
+  <Card className="terminal-container border-tx-blue/30">
+    <CardContent className="p-4">
+      <div className="flex items-center gap-2">
+        <Wallet className="w-4 h-4 text-tx-blue" />
+        <div>
+          <div className="text-xs text-muted-foreground">P&L Today</div>
+          <div className="text-sm font-bold trading-numbers">—</div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+  <Card className="terminal-container border-tx-orange/30">
+    <CardContent className="p-4">
+      <div className="flex items-center gap-2">
+        <TrendingUp className="w-4 h-4 text-tx-orange" />
+        <div>
+          <div className="text-xs text-muted-foreground">Win Rate</div>
+          <div className="text-sm font-bold trading-numbers">—</div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+  <Card className="terminal-container border-tx-green/30">
+    <CardContent className="p-4">
+      <div className="flex items-center gap-2">
+        <Activity className="w-4 h-4 text-tx-green" />
+        <div>
+          <div className="text-xs text-muted-foreground">Total Trades</div>
+          <div className="text-sm font-bold trading-numbers">{marketData?.paper_trades?.length || 0}</div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+  <Card className="terminal-container border-tx-red/30">
+    <CardContent className="p-4">
+      <div className="flex items-center gap-2">
+        <PieChart className="w-4 h-4 text-tx-red" />
+        <div>
+          <div className="text-xs text-muted-foreground">Positions</div>
+          <div className="text-sm font-bold text-tx-red trading-numbers">{positions.length}</div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+</div>
 
           {/* Trading Panel */}
           <Card className="terminal-container">
@@ -289,7 +325,7 @@ const TradingSimulator: React.FC = () => {
                             <div className="flex items-center justify-between w-full">
                               <span>{symbol.label}</span>
                               <span className="text-tx-green trading-numbers ml-2">
-                                ${getCurrentPrice(symbol.value).toLocaleString()}
+                                {getCurrentPrice(symbol.value) > 0 ? `$${getCurrentPrice(symbol.value).toLocaleString()}` : '—'}
                               </span>
                             </div>
                           </SelectItem>
@@ -362,9 +398,9 @@ const TradingSimulator: React.FC = () => {
 
               <div className="mt-4 text-center">
                 <div className="text-xs text-muted-foreground">
-                  Estimated Value: 
+                  Estimated Value:
                   <span className="text-tx-green font-bold trading-numbers ml-1">
-                    ${(getCurrentPrice(selectedSymbol) * quantity).toLocaleString()}
+                    {getCurrentPrice(selectedSymbol) > 0 ? `$${(getCurrentPrice(selectedSymbol) * quantity).toLocaleString()}` : '—'}
                   </span>
                 </div>
               </div>
@@ -416,20 +452,24 @@ const TradingSimulator: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
                           <span className="text-muted-foreground">Qty:</span>
-                          <span className="font-bold trading-numbers ml-1">{position.quantity}</span>
+                          <span className="font-bold trading-numbers ml-1">{(position as any).quantity ?? (position as any).qty ?? 0}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Entry:</span>
-                          <span className="font-bold trading-numbers ml-1">${position.entryPrice}</span>
+                          <span className="font-bold trading-numbers ml-1">
+                            ${((position as any).entryPrice ?? (position as any).entry_price ?? (position as any).price ?? 0)}
+                          </span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Current:</span>
-                          <span className="font-bold trading-numbers ml-1">${getCurrentPrice(position.symbol)}</span>
+                          <span className="font-bold trading-numbers ml-1">
+                            {getCurrentPrice(position.symbol) > 0 ? `$${getCurrentPrice(position.symbol)}` : '—'}
+                          </span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">P&L:</span>
-                          <span className={`font-bold trading-numbers ml-1 ${position.pnl >= 0 ? 'text-tx-green' : 'text-tx-red'}`}>
-                            {position.pnl >= 0 ? '+' : ''}${position.pnl || 0}
+                          <span className={`font-bold trading-numbers ml-1 ${((position as any).pnl ?? 0) >= 0 ? 'text-tx-green' : 'text-tx-red'}`}>
+                            {((position as any).pnl ?? 0) >= 0 ? '+' : ''}${(position as any).pnl ?? 0}
                           </span>
                         </div>
                       </div>
@@ -452,7 +492,6 @@ const TradingSimulator: React.FC = () => {
               <div className="space-y-3">
                 {symbols.map((symbol) => {
                   const currentPrice = getCurrentPrice(symbol.value);
-                  const change = Math.random() * 10 - 5; // Simulated change
                   return (
                     <div
                       key={symbol.value}
@@ -463,9 +502,8 @@ const TradingSimulator: React.FC = () => {
                         <div className="text-xs text-muted-foreground">{symbol.label}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm font-bold trading-numbers">${currentPrice.toLocaleString()}</div>
-                        <div className={`text-xs trading-numbers ${change >= 0 ? 'text-tx-green' : 'text-tx-red'}`}>
-                          {change >= 0 ? '+' : ''}{change.toFixed(2)}%
+                        <div className="text-sm font-bold trading-numbers">
+                          {currentPrice > 0 ? `$${currentPrice.toLocaleString()}` : '—'}
                         </div>
                       </div>
                     </div>
@@ -475,38 +513,6 @@ const TradingSimulator: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Risk Monitor */}
-          <Card className="terminal-container border-tx-orange/30">
-            <CardHeader>
-              <CardTitle className="text-tx-orange text-sm flex items-center gap-2">
-                <AlertCircle className="w-4 h-4" />
-                Risk Monitor
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Portfolio Value:</span>
-                  <span className="font-bold trading-numbers">${(balance + positions.reduce((sum, p) => sum + (p.pnl || 0), 0)).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Available Cash:</span>
-                  <span className="font-bold trading-numbers">${balance.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Margin Used:</span>
-                  <span className="font-bold trading-numbers">0%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Risk Level:</span>
-                  <Badge className="bg-tx-green/20 text-tx-green border-tx-green/30 text-xs">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    LOW
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
