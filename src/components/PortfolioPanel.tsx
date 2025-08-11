@@ -59,7 +59,7 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ apiBase, onSelectSymbol
                 .slice(0, 6)
                 .map(([k, v]) => (
                   <div key={k} className="p-2 bg-tx-gray/30 rounded border border-tx-green/10">
-                    <div className="text-muted-foreground">{k.replaceAll('_',' ')}</div>
+                    <div className="text-muted-foreground">{k.replace(/_/g,' ')}</div>
                     <div className="trading-numbers font-bold">{String(v)}</div>
                   </div>
                 ))}
