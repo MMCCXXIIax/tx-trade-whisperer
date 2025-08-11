@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,8 @@ import {
   AlertCircle,
   CheckCircle2
 } from 'lucide-react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import CandlestickChart from '@/components/charts/CandlestickChart';
+import PortfolioPanel from '@/components/PortfolioPanel';
 
 interface Position {
   symbol: string;
@@ -68,6 +69,16 @@ const symbols = [
   { value: 'cardano', label: 'Cardano (ADA)' },
   { value: 'polygon', label: 'Polygon (MATIC)' }
 ];
+const symbolsList = useMemo(() => {
+  const results = marketData?.last_scan?.results;
+  if (Array.isArray(results) && results.length) {
+    return results.map((r: any) => ({
+      value: r.symbol,
+      label: r.label || String(r.symbol || '').toUpperCase(),
+    }));
+  }
+  return symbols;
+}, [marketData]);
 
   // Fetch live market data
   useEffect(() => {
@@ -242,18 +253,10 @@ const closePosition = async (symbol: string) => {
 {/* Real-Time Chart */}
 <Card className="terminal-container">
   <CardHeader>
-    <CardTitle className="text-tx-green text-lg font-semibold">{symbols.find(s=>s.value===selectedSymbol)?.label} — Real-Time</CardTitle>
+    <CardTitle className="text-tx-green text-lg font-semibold">{symbolsList.find(s=>s.value===selectedSymbol)?.label || selectedSymbol.toUpperCase()} — Real-Time</CardTitle>
   </CardHeader>
   <CardContent style={{ height: 280 }}>
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={priceSeries} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="time" hide />
-        <YAxis domain={['auto','auto']} tickFormatter={(v)=>`$${Number(v).toLocaleString()}`} width={70} />
-        <Tooltip formatter={(v)=>`$${Number(v).toLocaleString()}`} labelFormatter={(l)=>`Time: ${l}`} />
-        <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} isAnimationActive={false} />
-      </LineChart>
-    </ResponsiveContainer>
+    <CandlestickChart symbol={selectedSymbol} apiBase={API_BASE} />
   </CardContent>
 </Card>
 
@@ -320,7 +323,7 @@ const closePosition = async (symbol: string) => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {symbols.map((symbol) => (
+                        {symbolsList.map((symbol) => (
                           <SelectItem key={symbol.value} value={symbol.value}>
                             <div className="flex items-center justify-between w-full">
                               <span>{symbol.label}</span>
@@ -490,7 +493,7 @@ const closePosition = async (symbol: string) => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {symbols.map((symbol) => {
+                {symbolsList.map((symbol) => {
                   const currentPrice = getCurrentPrice(symbol.value);
                   return (
                     <div
@@ -512,6 +515,8 @@ const closePosition = async (symbol: string) => {
               </div>
             </CardContent>
           </Card>
+
+          <PortfolioPanel apiBase={API_BASE} onSelectSymbol={setSelectedSymbol} />
 
         </div>
       </div>
