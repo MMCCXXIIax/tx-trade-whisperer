@@ -50,13 +50,13 @@ const TradingSimulator: React.FC = () => {
   const [price, setPrice] = useState('');
   const [orderType, setOrderType] = useState('market');
   const [positions, setPositions] = useState<Position[]>([]);
-  const [balance, setBalance] = useState(10000);
+  const [balance, setBalance] = useState(100000);
   const [stats, setStats] = useState<TradingStats>({
     totalTrades: 0,
     winRate: 0,
     totalPnL: 0,
     dayPnL: 0,
-    balance: 10000
+    balance: 100000
   });
   const [isLoading, setIsLoading] = useState(false);
 const [marketData, setMarketData] = useState<any>(null);
