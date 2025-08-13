@@ -44,7 +44,7 @@ interface AppState {
   last_signal: LastSignal | null;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence-ihsatx6h4-robert-manegabes-projects.vercel.app';
+const API_BASE = 'https://tx-predictive-intelligence.vercel.app';
 
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
