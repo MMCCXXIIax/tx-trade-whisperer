@@ -26,7 +26,7 @@ interface DetectionStats {
   recent_activity: number;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence-ihsatx6h4-robert-manegabes-projects.vercel.app';
+const API_BASE = 'https://tx-predictive-intelligence.vercel.app';
 
 const DetectionLogs: React.FC = () => {
   const [detections, setDetections] = useState<Detection[]>([]);
