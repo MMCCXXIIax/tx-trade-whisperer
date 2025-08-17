@@ -35,7 +35,7 @@ interface TradingStats {
   avg_trade: number;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.onrender.com';
+const API_BASE = 'https://tx-predictive-intelligence.onrender.com/';
 
 const PaperTrading: React.FC = () => {
   const [paperTrades, setPaperTrades] = useState<PaperTrade[]>([]);
