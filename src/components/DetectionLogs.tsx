@@ -26,7 +26,7 @@ interface DetectionStats {
   recent_activity: number;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.onrender.com';
+const API_BASE = 'https://tx-predictive-intelligence.onrender.com/';
 
 const DetectionLogs: React.FC = () => {
   const [detections, setDetections] = useState<Detection[]>([]);
