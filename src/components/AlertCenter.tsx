@@ -25,7 +25,7 @@ interface AlertStats {
   top_patterns: Array<{ pattern: string; count: number }>;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.onrender.com';
+const API_BASE = 'https://tx-predictive-intelligence.onrender.com/';
 
 const AlertCenter: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
