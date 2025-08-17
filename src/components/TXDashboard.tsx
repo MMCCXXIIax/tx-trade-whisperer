@@ -44,7 +44,7 @@ interface AppState {
   last_signal: LastSignal | null;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.onrender.com';
+const API_BASE = 'https://tx-predictive-intelligence.onrender.com/';
 
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
