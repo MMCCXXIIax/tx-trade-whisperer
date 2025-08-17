@@ -42,7 +42,7 @@ interface TradingStats {
   balance: number;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.vercel.app';
+const API_BASE = 'https://tx-predictive-intelligence.onrender.com';
 
 const TradingSimulator: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('bitcoin');
