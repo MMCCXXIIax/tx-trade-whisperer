@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
+import { safeFetch } from './TXDashboard'; // ✅ import from TXDashboard
 
 interface Position {
   symbol?: string;
@@ -21,40 +22,15 @@ interface PortfolioPanelProps {
   onSelectSymbol?: (sym: string) => void;
 }
 
-// ✅ Get from Vite env var
-const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
-
 const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
   const [data, setData] = useState<PortfolioData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
-  const safeFetch = async <T,>(
-    path: string,
-    retries = 2
-  ): Promise<T | null> => {
-    try {
-      const res = await fetch(`${API_BASE}${path}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return (await res.json()) as T;
-    } catch (e: any) {
-      console.error(`Fetch error: ${path}`, e);
-      if (retries > 0) return safeFetch<T>(path, retries - 1);
-      setError(e?.message || 'Failed to load portfolio');
-      toast({
-        title: 'Portfolio Fetch Failed',
-        description: e?.message || 'Unable to reach the server.',
-        variant: 'destructive',
-      });
-      return null;
-    }
-  };
-
   const fetchPortfolio = async () => {
     setError(null);
     const json = await safeFetch<PortfolioData | { portfolio?: PortfolioData }>('/api/portfolio');
     if (json) {
-      // Handle both { portfolio: { ... } } and plain object formats
       setData((json as any).portfolio || (json as PortfolioData));
     }
   };
@@ -67,8 +43,7 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
     };
   }, []);
 
-  const positions =
-    (data?.positions || data?.open_positions || []) as Position[];
+  const positions = (data?.positions || data?.open_positions || []) as Position[];
 
   return (
     <Card className="terminal-container">
@@ -83,7 +58,7 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
 
         {data && (
           <div className="space-y-4">
-            {/* Summary stats */}
+            {/* summary stats */}
             <div className="grid grid-cols-2 gap-3 text-xs">
               {Object.entries(data)
                 .filter(([_, v]) => typeof v !== 'object' && v !== null)
@@ -99,7 +74,7 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
                 ))}
             </div>
 
-            {/* Positions list */}
+            {/* positions list */}
             {positions.length > 0 && (
               <div className="space-y-2">
                 <div className="text-xs text-muted-foreground">Positions</div>
