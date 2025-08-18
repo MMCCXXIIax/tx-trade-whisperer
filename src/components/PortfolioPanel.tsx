@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
-import { safeFetch } from './TXDashboard'; // ✅ import from TXDashboard
+import { safeFetch } from './TXDashboard';
 
 interface Position {
   symbol?: string;
@@ -32,15 +31,15 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
     const json = await safeFetch<PortfolioData | { portfolio?: PortfolioData }>('/api/portfolio');
     if (json) {
       setData((json as any).portfolio || (json as PortfolioData));
+    } else {
+      setError('Failed to load portfolio');
     }
   };
 
   useEffect(() => {
     fetchPortfolio();
     timerRef.current = setInterval(fetchPortfolio, 15000);
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => timerRef.current && clearInterval(timerRef.current);
   }, []);
 
   const positions = (data?.positions || data?.open_positions || []) as Position[];
@@ -58,7 +57,7 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
 
         {data && (
           <div className="space-y-4">
-            {/* summary stats */}
+            {/* Summary stats */}
             <div className="grid grid-cols-2 gap-3 text-xs">
               {Object.entries(data)
                 .filter(([_, v]) => typeof v !== 'object' && v !== null)
@@ -74,7 +73,7 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
                 ))}
             </div>
 
-            {/* positions list */}
+            {/* Positions list */}
             {positions.length > 0 && (
               <div className="space-y-2">
                 <div className="text-xs text-muted-foreground">Positions</div>
