@@ -8,8 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { Sparkles, TrendingUp, Shield, Zap } from 'lucide-react';
 
-// TODO: adjust import path to your Supabase client singleton if different
-import { supabase } from '@/lib/supabase';
+// Unified Supabase client
+import { supabase } from '@/lib/supabaseClient';
 
 type UserData = {
   name: string;
@@ -65,36 +65,36 @@ const Welcome: React.FC = () => {
             description: 'Log in to continue your TX setup.',
             variant: 'destructive',
           });
-          navigate('/auth'); // TODO: update if your auth route differs
+          navigate('/auth');
           return;
         }
 
-        // Fetch profile
-        const { data: profile, error: profileErr } = await supabase
+        // Fetch profile (schema uses `name`)
+        const { data: profile } = await supabase
           .from('profiles')
-          .select('id, full_name, email, mode')
+          .select('id, name, email, mode')
           .eq('id', user.id)
           .maybeSingle();
 
         if (!active) return;
 
         const nextData: UserData = {
-          name: profile?.full_name ?? '',
+          name: profile?.name ?? '',
           email: user.email ?? profile?.email ?? '',
           mode: (profile?.mode as UserData['mode']) ?? 'demo',
         };
         setUserData(nextData);
         setEmailLocked(Boolean(user.email)); // lock if email is from auth
 
-        // If returning user with completed onboarding, skip to dashboard
-        if (profile?.full_name && profile?.mode) {
+        // Returning users skip to dashboard
+        if (profile?.name && profile?.mode) {
           toast({
             title: 'Welcome back',
             description: `TX is synced. Taking you to your dashboard.`,
           });
           setTimeout(() => navigate('/dashboard'), 900);
         } else {
-          // Jump to details if we already showed the intro before
+          // If we already have partial info, jump to details
           setStep(nextData.name || nextData.email ? 2 : 1);
         }
       } catch (err: any) {
@@ -114,6 +114,8 @@ const Welcome: React.FC = () => {
   }, [navigate]);
 
   const handleNext = () => {
+    if (loading) return; // guard to prevent rapid forward clicks
+
     if (step === 1) {
       setStep(2);
       return;
@@ -134,6 +136,7 @@ const Welcome: React.FC = () => {
   };
 
   const handleComplete = async () => {
+    if (loading) return; // prevent double submission
     setLoading(true);
     try {
       const {
@@ -153,7 +156,7 @@ const Welcome: React.FC = () => {
 
       const payload = {
         id: user.id, // required for RLS alignment
-        full_name: userData.name.trim(),
+        name: userData.name.trim(),
         email: (userData.email || '').trim(),
         mode: userData.mode,
         updated_at: new Date().toISOString(),
@@ -205,7 +208,6 @@ const Welcome: React.FC = () => {
       {/* Main content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="max-w-md w-full space-y-6">
-
           {step === 1 && (
             <Card className="terminal-container animate-fade-in border-tx-green/30">
               <CardHeader className="text-center">
@@ -215,9 +217,7 @@ const Welcome: React.FC = () => {
                 <CardTitle className="text-tx-green text-2xl font-bold">
                   TX INTELLIGENCE
                 </CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  Your AI Trading Co‑Pilot
-                </p>
+                <p className="text-muted-foreground text-sm">Your AI Trading Co‑Pilot</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="min-h-20 flex items-center">
