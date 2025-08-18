@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, TrendingDown, PieChart, BarChart3, Play, Square, ShoppingCart } from 'lucide-react';
+import { safeFetch } from './TXDashboard'; // same helper as PortfolioPanel
 
 interface PaperTrade {
   id: number;
   symbol: string;
-  action: string;
+  action: 'BUY' | 'SELL';
   entry_price: string;
   exit_price?: string;
   quantity: number;
@@ -35,167 +36,102 @@ interface TradingStats {
   avg_trade: number;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.onrender.com/';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PaperTrading: React.FC = () => {
   const [paperTrades, setPaperTrades] = useState<PaperTrade[]>([]);
   const [tradingStats, setTradingStats] = useState<TradingStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Trading form state
+
   const [symbol, setSymbol] = useState('');
   const [action, setAction] = useState<'BUY' | 'SELL'>('BUY');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
   const [isTrading, setIsTrading] = useState(false);
-  
-  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchPaperTrades();
-    fetchTradingStats();
-  }, []);
+  const { toast } = useToast();
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchPaperTrades = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/get_paper_trades`);
-      if (response.ok) {
-        const data = await response.json();
-        setPaperTrades(data.trades || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch paper trades:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    const json = await safeFetch<{ trades: PaperTrade[] }>(`${API_BASE}/api/get_paper_trades`);
+    if (json?.trades) setPaperTrades(json.trades);
+    setIsLoading(false);
   };
 
   const fetchTradingStats = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/get_trading_stats`);
-      if (response.ok) {
-        const data = await response.json();
-        setTradingStats(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch trading stats:', error);
-    }
+    const json = await safeFetch<TradingStats>(`${API_BASE}/api/get_trading_stats`);
+    if (json) setTradingStats(json);
   };
 
   const placePaperTrade = async () => {
     if (!symbol || !quantity || !price) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all trade details",
-        variant: "destructive"
-      });
+      toast({ title: 'Missing Information', description: 'Please fill in all trade details', variant: 'destructive' });
       return;
     }
-
     setIsTrading(true);
-    try {
-      const response = await fetch(`${API_BASE}/api/paper-trade`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          symbol: symbol.toUpperCase(),
-          action,
-          quantity: parseFloat(quantity),
-          price: parseFloat(price)
-        }),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast({
-          title: "Trade Placed Successfully",
-          description: `${action} ${quantity} shares of ${symbol.toUpperCase()} at $${price}`,
-        });
-        
-        // Reset form
-        setSymbol('');
-        setQuantity('');
-        setPrice('');
-        
-        // Refresh data
-        fetchPaperTrades();
-        fetchTradingStats();
-      } else {
-        throw new Error('Failed to place trade');
-      }
-    } catch (error) {
-      toast({
-        title: "Trade Failed",
-        description: "Unable to place trade. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsTrading(false);
+    const result = await safeFetch(`${API_BASE}/api/paper-trade`, {
+      method: 'POST',
+      body: JSON.stringify({
+        symbol: symbol.toUpperCase(),
+        action,
+        quantity: parseFloat(quantity),
+        price: parseFloat(price),
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (result) {
+      toast({ title: 'Trade Placed', description: `${action} ${quantity} ${symbol.toUpperCase()} @ $${price}` });
+      setSymbol('');
+      setQuantity('');
+      setPrice('');
+      setAction('BUY');
+      fetchPaperTrades();
+      fetchTradingStats();
     }
+    setIsTrading(false);
   };
 
   const closePosition = async (tradeId: number) => {
-    try {
-      const response = await fetch(`${API_BASE}/api/close-position`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ trade_id: tradeId }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Position Closed",
-          description: "Position closed successfully",
-        });
-        
-        // Refresh data
-        fetchPaperTrades();
-        fetchTradingStats();
-      } else {
-        throw new Error('Failed to close position');
-      }
-    } catch (error) {
-      toast({
-        title: "Close Failed",
-        description: "Unable to close position. Please try again.",
-        variant: "destructive"
-      });
+    const result = await safeFetch(`${API_BASE}/api/close-position`, {
+      method: 'POST',
+      body: JSON.stringify({ trade_id: tradeId }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (result) {
+      toast({ title: 'Position Closed', description: `Trade #${tradeId} closed successfully` });
+      fetchPaperTrades();
+      fetchTradingStats();
     }
   };
 
-  const formatPnL = (pnl: number) => {
-    const isPositive = pnl >= 0;
-    return (
-      <span className={isPositive ? 'text-green-400' : 'text-red-400'}>
-        {isPositive ? '+' : ''}${pnl.toFixed(2)}
-      </span>
-    );
-  };
+  const formatPnL = (pnl: number) => (
+    <span className={pnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+      {pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}
+    </span>
+  );
 
-  const getStatusBadge = (status: string) => {
-    return status === 'open' ? 
-      <Badge variant="default" className="bg-blue-500/20 text-blue-400 border-blue-500">Open</Badge> :
-      <Badge variant="secondary">Closed</Badge>;
-  };
+  const getStatusBadge = (status: string) =>
+    status === 'open'
+      ? <Badge className="bg-blue-500/20 text-blue-400 border-blue-500">Open</Badge>
+      : <Badge variant="secondary">Closed</Badge>;
 
-  const getActionBadge = (action: string) => {
-    return action === 'BUY' ? 
-      <Badge className="bg-green-500/20 text-green-400 border-green-500">BUY</Badge> :
-      <Badge className="bg-red-500/20 text-red-400 border-red-500">SELL</Badge>;
-  };
+  const getActionBadge = (act: string) =>
+    act === 'BUY'
+      ? <Badge className="bg-green-500/20 text-green-400 border-green-500">BUY</Badge>
+      : <Badge className="bg-red-500/20 text-red-400 border-red-500">SELL</Badge>;
+
+  useEffect(() => {
+    fetchPaperTrades();
+    fetchTradingStats();
+    timerRef.current = setInterval(() => {
+      fetchPaperTrades();
+      fetchTradingStats();
+    }, 15000);
+    return () => timerRef.current && clearInterval(timerRef.current);
+  }, []);
 
   if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <div className="text-primary text-xl font-bold">Loading Paper Trading...</div>
-        </div>
-      </div>
-    );
+    return <div className="p-6 text-center text-primary font-bold">Loading Paper Trading…</div>;
   }
 
   return (
