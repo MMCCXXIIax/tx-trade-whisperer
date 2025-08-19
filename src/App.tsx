@@ -7,10 +7,9 @@ import Index from "./pages/Index";
 import Welcome from "./pages/Welcome";
 import NotFound from "./pages/NotFound";
 
-// src/App.tsx (or your routes file)
 import AuthPage from '@/pages/AuthPage'
 import ProtectedRoute from '@/components/ProtectedRoute'
-// ...
+
 <Route path="/auth" element={<AuthPage />} />
 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 <Route path="/welcome" element={<Welcome />} />
