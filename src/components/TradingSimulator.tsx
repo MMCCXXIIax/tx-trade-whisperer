@@ -42,7 +42,7 @@ interface TradingStats {
   balance: number;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.onrender.com/';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const TradingSimulator: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('bitcoin');
