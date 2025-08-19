@@ -26,7 +26,7 @@ interface DetectionStats {
   recent_activity: number;
 }
 
-const API_BASE = 'https://tx-predictive-intelligence.onrender.com/';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const DetectionLogs: React.FC = () => {
   const [detections, setDetections] = useState<Detection[]>([]);
