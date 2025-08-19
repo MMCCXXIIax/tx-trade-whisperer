@@ -1,204 +1,186 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '@/hooks/use-toast';
-import { Sparkles, TrendingUp, Shield, Zap } from 'lucide-react';
-
-// Unified Supabase client
-import { supabase } from '@/lib/supabaseClient';
+// Welcome.tsx
+import React, { useState, useEffect, useMemo } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useNavigate } from "react-router-dom"
+import { toast } from "@/hooks/use-toast"
+import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react"
+import { supabase } from "@/lib/supabaseClient"
+import { saveProfile } from "@/lib/saveProfile"
 
 type UserData = {
-  name: string;
-  email: string;
-  mode: 'demo' | 'broker';
-};
+  name: string
+  email: string
+  mode: "demo" | "broker"
+}
 
 const Welcome: React.FC = () => {
-  const navigate = useNavigate();
-
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const navigate = useNavigate()
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [userData, setUserData] = useState<UserData>({
-    name: '',
-    email: '',
-    mode: 'demo',
-  });
-  const [loading, setLoading] = useState(false);
-  const [typewriterText, setTypewriterText] = useState('');
-  const [emailLocked, setEmailLocked] = useState(false);
+    name: "",
+    email: "",
+    mode: "demo",
+  })
+  const [loading, setLoading] = useState(false)
+  const [typewriterText, setTypewriterText] = useState("")
+  const [emailLocked, setEmailLocked] = useState(false)
 
   const welcomeText = useMemo(
     () =>
       "Welcome to TX — your 24/7 trading intelligence. I'll scan, filter, and flag what matters. You decide. We execute.",
     []
-  );
+  )
 
-  // Typewriter effect
   useEffect(() => {
-    let index = 0;
+    let index = 0
     const timer = setInterval(() => {
       if (index <= welcomeText.length) {
-        setTypewriterText(welcomeText.slice(0, index));
-        index++;
+        setTypewriterText(welcomeText.slice(0, index))
+        index++
       } else {
-        clearInterval(timer);
+        clearInterval(timer)
       }
-    }, 60);
-    return () => clearInterval(timer);
-  }, [welcomeText]);
+    }, 60)
+    return () => clearInterval(timer)
+  }, [welcomeText])
 
-  // Load Supabase user and profile; skip onboarding if already completed
   useEffect(() => {
-    let active = true;
-    (async () => {
-      setLoading(true);
+    let active = true
+    ;(async () => {
+      setLoading(true)
       try {
-        const { data: userRes, error: userErr } = await supabase.auth.getUser();
-        if (userErr) throw userErr;
-        const user = userRes?.user;
+        const { data: userRes, error: userErr } = await supabase.auth.getUser()
+        if (userErr) throw userErr
+        const user = userRes?.user
         if (!user) {
           toast({
-            title: 'Sign in required',
-            description: 'Log in to continue your TX setup.',
-            variant: 'destructive',
-          });
-          navigate('/auth');
-          return;
+            title: "Sign in required",
+            description: "Log in to continue your TX setup.",
+            variant: "destructive",
+          })
+          navigate("/auth")
+          return
         }
 
-        // Fetch profile (schema uses `name`)
         const { data: profile } = await supabase
-          .from('profiles')
-          .select('id, name, email, mode')
-          .eq('id', user.id)
-          .maybeSingle();
+          .from("profiles")
+          .select("id, name, email, mode")
+          .eq("id", user.id)
+          .maybeSingle()
 
-        if (!active) return;
+        if (!active) return
 
         const nextData: UserData = {
-          name: profile?.name ?? '',
-          email: user.email ?? profile?.email ?? '',
-          mode: (profile?.mode as UserData['mode']) ?? 'demo',
-        };
-        setUserData(nextData);
-        setEmailLocked(Boolean(user.email)); // lock if email is from auth
+          name: profile?.name ?? "",
+          email: user.email ?? profile?.email ?? "",
+          mode: (profile?.mode as UserData["mode"]) ?? "demo",
+        }
+        setUserData(nextData)
+        setEmailLocked(Boolean(user.email))
 
-        // Returning users skip to dashboard
         if (profile?.name && profile?.mode) {
           toast({
-            title: 'Welcome back',
+            title: "Welcome back",
             description: `TX is synced. Taking you to your dashboard.`,
-          });
-          setTimeout(() => navigate('/dashboard'), 900);
+          })
+          setTimeout(() => navigate("/dashboard"), 900)
         } else {
-          // If we already have partial info, jump to details
-          setStep(nextData.name || nextData.email ? 2 : 1);
+          setStep(nextData.name || nextData.email ? 2 : 1)
         }
       } catch (err: any) {
-        console.error(err);
+        console.error(err)
         toast({
-          title: 'Could not load your profile',
-          description: 'Please try again. If this persists, re-login.',
-          variant: 'destructive',
-        });
+          title: "Could not load your profile",
+          description: "Please try again. If this persists, re-login.",
+          variant: "destructive",
+        })
       } finally {
-        if (active) setLoading(false);
+        if (active) setLoading(false)
       }
-    })();
+    })()
     return () => {
-      active = false;
-    };
-  }, [navigate]);
+      active = false
+    }
+  }, [navigate])
 
   const handleNext = () => {
-    if (loading) return; // guard to prevent rapid forward clicks
-
-    if (step === 1) {
-      setStep(2);
-      return;
-    }
+    if (loading) return
+    if (step === 1) return setStep(2)
     if (step === 2) {
       if (!userData.name || !userData.email) {
         toast({
-          title: 'Missing info',
-          description: 'Name and email keep your signals personal. Fill them in to continue.',
-          variant: 'destructive',
-        });
-        return;
+          title: "Missing info",
+          description:
+            "Name and email keep your signals personal. Fill them in to continue.",
+          variant: "destructive",
+        })
+        return
       }
-      setStep(3);
-      return;
+      return setStep(3)
     }
-    void handleComplete();
-  };
+    void handleComplete()
+  }
 
   const handleComplete = async () => {
-    if (loading) return; // prevent double submission
-    setLoading(true);
+    if (loading) return
+    setLoading(true)
     try {
       const {
         data: { user },
         error: userErr,
-      } = await supabase.auth.getUser();
-      if (userErr) throw userErr;
+      } = await supabase.auth.getUser()
+      if (userErr) throw userErr
       if (!user) {
         toast({
-          title: 'Session expired',
-          description: 'Please sign in again.',
-          variant: 'destructive',
-        });
-        navigate('/auth');
-        return;
+          title: "Session expired",
+          description: "Please sign in again.",
+          variant: "destructive",
+        })
+        navigate("/auth")
+        return
       }
 
       const payload = {
-        id: user.id, // required for RLS alignment
+        id: user.id,
         name: userData.name.trim(),
-        email: (userData.email || '').trim(),
+        email: (userData.email || "").trim(),
         mode: userData.mode,
-        updated_at: new Date().toISOString(),
-      };
-
-      const { error: upsertErr } = await supabase
-        .from('profiles')
-        .upsert(payload, { onConflict: 'id' })
-        .select()
-        .single();
-
-      if (upsertErr) throw upsertErr;
-
-      // Optional: light local cache for UI snappiness (not a source of truth)
-      try {
-        localStorage.setItem('tx_mode', userData.mode);
-      } catch {
-        // ignore storage errors
       }
+
+      const result = await saveProfile(payload)
+      if (!result.success) throw new Error(result.error)
+
+      try {
+        localStorage.setItem("tx_mode", userData.mode)
+      } catch {}
 
       toast({
         title: "You're in",
         description:
-          userData.mode === 'demo'
+          userData.mode === "demo"
             ? `Nice, ${userData.name}. Demo mode armed. Learn the rhythm; then go live.`
             : `Locked and loaded, ${userData.name}. Live mode enabled — trade with intention.`,
-      });
+      })
 
-      setTimeout(() => navigate('/dashboard'), 900);
+      setTimeout(() => navigate("/dashboard"), 900)
     } catch (err: any) {
-      console.error(err);
+      console.error(err)
       toast({
-        title: 'Save failed',
-        description: 'TX could not save your setup. Check your connection and try again.',
-        variant: 'destructive',
-      });
+        title: "Save failed",
+        description:
+          "TX could not save your setup. Check your connection and try again.",
+        variant: "destructive",
+      })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  return (
+ return (
     <div className="min-h-screen bg-background overflow-hidden relative">
       {/* Animated background grid */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
