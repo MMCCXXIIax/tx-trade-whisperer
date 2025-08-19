@@ -6,9 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -49,6 +48,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "express": "^4.21.2",
     "input-otp": "^1.4.2",
     "lightweight-charts": "^4.2.3",
     "lucide-react": "^0.462.0",
@@ -80,6 +80,7 @@
     "globals": "^15.15.0",
     "lovable-tagger": "^1.1.8",
     "postcss": "^8.5.6",
+    "yarn add -D vite",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
