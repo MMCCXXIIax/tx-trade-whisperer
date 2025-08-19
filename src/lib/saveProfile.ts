@@ -7,25 +7,20 @@ export async function saveProfile({
   id: string
   name: string
   email: string
-  mode?: "demo" | "live"
+  mode?: "demo" | "broker"
 }) {
   try {
     const res = await fetch("/api/save-profile", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, name, email, mode }),
     })
-
     const data = await res.json()
-
     if (!res.ok || data.status !== "ok") {
       throw new Error(data.message || "Save failed")
     }
-
     return { success: true }
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Failed to save profile:", err)
     return { success: false, error: err.message }
   }
