@@ -9,7 +9,7 @@ import Welcome from "@/pages/Welcome";
 import NotFound from "@/pages/NotFound";
 import AuthPage from "@/pages/AuthPage";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import TXDashboard from "@/components/TXDashboard"; // ✅ updated path
+import TXDashboard from "@/components/TXDashboard";
 
 const queryClient = new QueryClient();
 
