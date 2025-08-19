@@ -8,7 +8,7 @@ import Index from "@/pages/Index";
 import Welcome from "@/pages/Welcome";
 import NotFound from "@/pages/NotFound";
 import AuthPage from "@/pages/AuthPage";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import ProtectedRoute from "@/components/ui/ProtectedRoute";
 import TXDashboard from "@/components/TXDashboard";
 
 const queryClient = new QueryClient();
