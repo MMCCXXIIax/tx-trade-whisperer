@@ -36,7 +36,7 @@ interface TradingStats {
   avg_trade: number;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = "/api";
 
 const PaperTrading: React.FC = () => {
   const [paperTrades, setPaperTrades] = useState<PaperTrade[]>([]);
