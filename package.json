@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -42,12 +45,8 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.53.0",
     "@tanstack/react-query": "^5.83.0",
-<<<<<<< HEAD
-    "@vitejs/plugin-react": "^5.0.0",
-=======
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.21",
->>>>>>> 5902ef8426d909793ba8aa1be904e5590c7d8e6e
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -70,8 +69,8 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^3.4.17",
-    "ts-node": "^10.9.2",
     "tailwindcss-animate": "^1.0.7",
+    "ts-node": "^10.9.2",
     "vaul": "^0.9.9",
     "vite": "^5.4.19",
     "zod": "^3.25.76"
@@ -87,11 +86,6 @@
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
     "typescript": "^5.8.3",
-<<<<<<< HEAD
-    "typescript-eslint": "^8.38.0",
-    "vite": "^7.1.2"
-=======
     "typescript-eslint": "^8.38.0"
->>>>>>> 5902ef8426d909793ba8aa1be904e5590c7d8e6e
   }
 }
