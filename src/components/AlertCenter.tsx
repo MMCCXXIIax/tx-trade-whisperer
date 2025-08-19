@@ -25,7 +25,7 @@ interface AlertStats {
   top_patterns: Array<{ pattern: string; count: number }>;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = "/api";
 
 const AlertCenter: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
