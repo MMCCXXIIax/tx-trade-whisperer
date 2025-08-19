@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-  "node": ">=20 <25"
+    "node": ">=20 <25"
   },
   "scripts": {
     "dev": "vite",
@@ -45,7 +45,7 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.53.0",
     "@tanstack/react-query": "^5.83.0",
-    "@vitejs/plugin-react-swc": "^3.11.0",
+    "@vitejs/plugin-react-swc": "^4.0.1",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -55,7 +55,7 @@
     "express": "^4.21.2",
     "input-otp": "^1.4.2",
     "lightweight-charts": "^4.2.3",
-    "lovable-tagger": "^1.1.8",
+    "lovable-tagger": "^1.1.9",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "postcss": "^8.5.6",
