@@ -44,7 +44,7 @@ interface AppState {
   last_signal: LastSignal | null;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL as string;
+const API_BASE = "/api";
 
 // 🔹 Shared safeFetch helper
 export const safeFetch = async <T,>(
