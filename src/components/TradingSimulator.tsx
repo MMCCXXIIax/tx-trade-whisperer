@@ -42,7 +42,7 @@ interface TradingStats {
   balance: number;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = "/api";
 
 const TradingSimulator: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('bitcoin');
