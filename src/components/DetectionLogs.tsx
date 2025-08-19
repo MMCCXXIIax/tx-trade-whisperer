@@ -26,7 +26,7 @@ interface DetectionStats {
   recent_activity: number;
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = "/api";
 
 const DetectionLogs: React.FC = () => {
   const [detections, setDetections] = useState<Detection[]>([]);
