@@ -11,10 +11,77 @@ import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react"
 import { supabase } from "@/lib/supabaseClient"
 import { saveProfile } from "@/lib/saveProfile"
 
+
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '@/lib/supabaseClient'
+
+export default function Welcome() {
+  const navigate = useNavigate()
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!mounted) return
+
+      if (!session?.user) {
+        // No auth → send to login
+        navigate('/auth', { replace: true })
+        return
+      }
+
+      setUser(session.user)
+      setLoading(false)
+    }
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        navigate('/auth', { replace: true })
+      } else {
+        setUser(session.user)
+      }
+    })
+
+    init()
+
+    return () => {
+      mounted = false
+      sub.subscription.unsubscribe()
+    }
+  }, [navigate])
+
+  if (loading) return null
+
+  const handleSaveProfile = async (formData) => {
+    if (!user) return
+    const res = await fetch('/api/save-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: user.id, // guaranteed to exist now
+        ...formData
+      })
+    })
+    // handle response...
+  }
+
+  return (
+    <div>
+      {/* your form here */}
+    </div>
+  )
+}
+
+
+
 type UserData = {
   name: string
   email: string
-  mode: "demo" | "broker"
+  mode: "demo" | "live"
 }
 
 const Welcome: React.FC = () => {
