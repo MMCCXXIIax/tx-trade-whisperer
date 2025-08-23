@@ -1,5 +1,5 @@
 // src/App.tsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/Auth'
 import WelcomePage from '@/pages/Welcome'
@@ -32,6 +32,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Default route → onboarding */}
+        <Route path="/" element={<Navigate to="/welcome" replace />} />
 
         {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />
