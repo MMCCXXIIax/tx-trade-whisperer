@@ -1,22 +1,56 @@
-// src/components/ProtectedRoute.tsx
 import { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/lib/supabaseClient'
 
+type Status = 'checking' | 'guest' | 'needsProfile' | 'ready'
+
 export default function ProtectedRoute({ children }: { children: JSX.Element }) {
-  const [status, setStatus] = useState<'checking'|'authed'|'guest'>('checking')
+  const [status, setStatus] = useState<Status>('checking')
+  const location = useLocation()
 
   useEffect(() => {
     let mounted = true
-    const check = async () => {
+
+    const checkAuthAndProfile = async () => {
+      // 1. Check session
       const { data: { session } } = await supabase.auth.getSession()
       if (!mounted) return
-      setStatus(session ? 'authed' : 'guest')
+
+      if (!session?.user) {
+        setStatus('guest')
+        return
+      }
+
+      // 2. Check if profile exists in public.profiles
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', session.user.id)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching profile:', error)
+        setStatus('guest') // fallback to login
+        return
+      }
+
+      if (!profile) {
+        setStatus('needsProfile')
+      } else {
+        setStatus('ready')
+      }
     }
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      setStatus(session ? 'authed' : 'guest')
+      if (!session?.user) {
+        setStatus('guest')
+      } else {
+        checkAuthAndProfile()
+      }
     })
-    check()
+
+    checkAuthAndProfile()
+
     return () => {
       mounted = false
       sub.subscription.unsubscribe()
@@ -24,6 +58,19 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
   }, [])
 
   if (status === 'checking') return null
+
+  // Not logged in → go to /auth
   if (status === 'guest') return <Navigate to="/auth" replace />
+
+  // Logged in but no profile → go to /welcome
+  if (status === 'needsProfile' && location.pathname !== '/welcome') {
+    return <Navigate to="/welcome" replace />
+  }
+
+  // Logged in and has profile → if they try to hit /welcome, send to dashboard
+  if (status === 'ready' && location.pathname === '/welcome') {
+    return <Navigate to="/dashboard" replace />
+  }
+
   return children
 }
