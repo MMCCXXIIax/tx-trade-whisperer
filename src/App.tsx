@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/AuthPage'
 import WelcomePage from '@/pages/Welcome'
-import DashboardPage from '@/pages/Dashboard'
+import TXDashboard from '@/components/TXDashboard'
 import NotFoundPage from '@/pages/NotFound'
 
 export default function App() {
