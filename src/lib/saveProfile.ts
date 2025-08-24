@@ -4,7 +4,7 @@ export async function saveProfile(payload: {
   id: string
   name: string
   email: string
-  mode: "demo" | "broker"
+  mode: "demo" | "live"
 }) {
   try {
     const res = await fetch("/api/save-profile", {
