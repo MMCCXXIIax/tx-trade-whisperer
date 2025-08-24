@@ -83,6 +83,7 @@ const Index = () => {
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           userName={userData.name}
+          mode={userData.mode}
         />
         {renderCurrentPage()}
       </div>
