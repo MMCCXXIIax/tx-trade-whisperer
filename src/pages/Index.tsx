@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabaseClient';
+
 import TXDashboard from '@/components/TXDashboard';
 import TXNavigation from '@/components/TXNavigation';
 import TradingView from '@/components/TradingView';
@@ -8,24 +10,41 @@ import DetectionLogs from '@/components/DetectionLogs';
 import PaperTrading from '@/components/PaperTrading';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Settings, Bell, DollarSign, FileText, TrendingUp } from 'lucide-react';
+import { Settings, Bell, DollarSign } from 'lucide-react';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [userData, setUserData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user has completed onboarding
-    const storedUser = localStorage.getItem('tx_user');
-    if (!storedUser) {
-      navigate('/');
-      return;
-    }
-    setUserData(JSON.parse(storedUser));
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth', { replace: true });
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error || !profile) {
+        navigate('/welcome', { replace: true });
+        return;
+      }
+
+      setUserData(profile);
+      setLoading(false);
+    };
+
+    fetchProfile();
   }, [navigate]);
 
-  if (!userData) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -71,25 +90,6 @@ const Index = () => {
   );
 };
 
-// Placeholder components for other pages
-const AlertsPage = () => (
-  <Card className="terminal-container">
-    <CardHeader>
-      <CardTitle className="text-tx-green flex items-center gap-2">
-        <Bell className="w-5 h-5" />
-        Alert Center
-      </CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div className="text-center py-12">
-        <Bell className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-bold mb-2">No active alerts</h3>
-        <p className="text-muted-foreground">TX will notify you when patterns are detected</p>
-      </div>
-    </CardContent>
-  </Card>
-);
-
 const PerformancePage = () => (
   <Card className="terminal-container">
     <CardHeader>
@@ -134,24 +134,6 @@ const SettingsPage = ({ userData }: { userData: any }) => (
         <Badge variant="outline" className="bg-tx-green/20 text-tx-green">
           {userData.mode === 'demo' ? 'Demo Mode' : 'Live Trading'}
         </Badge>
-      </div>
-      
-      <div className="space-y-3">
-        <h4 className="font-bold">TX Preferences</h4>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-between">
-            <span>Alert Frequency</span>
-            <Badge variant="outline">Medium</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Risk Tolerance</span>
-            <Badge variant="outline">Conservative</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Sound Alerts</span>
-            <Badge variant="outline">Enabled</Badge>
-          </div>
-        </div>
       </div>
     </CardContent>
   </Card>
