@@ -37,7 +37,7 @@ export default function AuthPage() {
       <Auth
         supabaseClient={supabase}
         appearance={{ theme: ThemeSupa }}
-        providers={['google', 'github']}
+        providers={['google', 'github','discord']}
         magicLink
         redirectTo={window.location.origin + '/dashboard'}
       />
