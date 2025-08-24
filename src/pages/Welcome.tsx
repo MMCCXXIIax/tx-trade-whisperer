@@ -250,7 +250,7 @@ export default function Welcome() {
                   <RadioGroup
                     value={userData.mode}
                     onValueChange={(val) =>
-                      setUserData((s) => ({ ...s, mode: val as "demo" | "broker" }))
+                      setUserData((s) => ({ ...s, mode: val as "demo" | "live" }))
                     }
                     className="flex gap-4"
                   >
@@ -259,8 +259,8 @@ export default function Welcome() {
                       <Label htmlFor="demo">Demo</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="broker" id="broker" />
-                      <Label htmlFor="broker">Live</Label>
+                      <RadioGroupItem value="live" id="live" />
+                      <Label htmlFor="live">Live</Label>
                     </div>
                   </RadioGroup>
                 </div>
