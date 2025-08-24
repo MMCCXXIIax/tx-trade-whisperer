@@ -19,16 +19,19 @@ interface TXNavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
   userName?: string;
+  mode?: 'demo' | 'live';
 }
 
 const TXNavigation: React.FC<TXNavigationProps> = ({ 
   currentPage, 
   onPageChange, 
-  userName = "Trader" 
+  userName = "Trader",
+  mode = 'demo'
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigationItems = [
+  // Base navigation items
+  let navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
     { id: 'trading', label: 'Trading View', icon: BarChart3 },
     { id: 'alerts', label: 'Alert Center', icon: Bell },
@@ -37,6 +40,41 @@ const TXNavigation: React.FC<TXNavigationProps> = ({
     { id: 'performance', label: 'Performance', icon: DollarSign },
     { id: 'settings', label: 'Settings', icon: Settings }
   ];
+
+  // Mode-based filtering
+  if (mode === 'demo') {
+    // Hide live-only features in demo mode
+    navigationItems = navigationItems.filter(item => item.id !== 'trading');
+  }
+
+  const renderNavButtons = (isMobile = false) =>
+    navigationItems.map((item) => {
+      const Icon = item.icon;
+      return (
+        <Button
+          key={item.id}
+          variant={currentPage === item.id ? "default" : "ghost"}
+          size={isMobile ? undefined : "sm"}
+          className={`
+            ${isMobile 
+              ? `w-full justify-start space-x-3 p-3 ${currentPage === item.id 
+                  ? 'bg-tx-green text-tx-black hover:bg-tx-green/90' 
+                  : 'text-foreground hover:bg-secondary'}`
+              : `flex items-center space-x-2 px-3 py-2 text-xs ${currentPage === item.id 
+                  ? 'bg-tx-green text-tx-black hover:bg-tx-green/90' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary'}`
+            }
+          `}
+          onClick={() => {
+            onPageChange(item.id);
+            if (isMobile) setMobileMenuOpen(false);
+          }}
+        >
+          <Icon className={isMobile ? "w-5 h-5" : "w-4 h-4"} />
+          <span className={isMobile ? "" : "hidden lg:inline"}>{item.label}</span>
+        </Button>
+      );
+    });
 
   return (
     <>
@@ -56,34 +94,16 @@ const TXNavigation: React.FC<TXNavigationProps> = ({
 
           {/* Navigation Links */}
           <div className="flex items-center space-x-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Button
-                  key={item.id}
-                  variant={currentPage === item.id ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => onPageChange(item.id)}
-                  className={`
-                    flex items-center space-x-2 px-3 py-2 text-xs
-                    ${currentPage === item.id 
-                      ? 'bg-tx-green text-tx-black hover:bg-tx-green/90' 
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-                    }
-                  `}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden lg:inline">{item.label}</span>
-                </Button>
-              );
-            })}
+            {renderNavButtons(false)}
           </div>
 
           {/* User Info */}
           <div className="flex items-center space-x-3">
             <div className="hidden lg:block text-right">
               <p className="text-sm font-bold text-foreground">{userName}</p>
-              <p className="text-xs text-muted-foreground">Active Trader</p>
+              <p className="text-xs text-muted-foreground">
+                {mode === 'demo' ? 'Demo Mode' : 'Live Trader'}
+              </p>
             </div>
             <Button
               variant="ghost"
@@ -131,35 +151,15 @@ const TXNavigation: React.FC<TXNavigationProps> = ({
                   </div>
                   <div>
                     <p className="font-bold text-foreground">{userName}</p>
-                    <p className="text-sm text-muted-foreground">Active Trader</p>
+                    <p className="text-sm text-muted-foreground">
+                      {mode === 'demo' ? 'Demo Mode' : 'Live Trader'}
+                    </p>
                   </div>
                 </div>
 
                 {/* Navigation Items */}
                 <div className="space-y-2">
-                  {navigationItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
-                      <Button
-                        key={item.id}
-                        variant={currentPage === item.id ? "default" : "ghost"}
-                        className={`
-                          w-full justify-start space-x-3 p-3
-                          ${currentPage === item.id 
-                            ? 'bg-tx-green text-tx-black hover:bg-tx-green/90' 
-                            : 'text-foreground hover:bg-secondary'
-                          }
-                        `}
-                        onClick={() => {
-                          onPageChange(item.id);
-                          setMobileMenuOpen(false);
-                        }}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span>{item.label}</span>
-                      </Button>
-                    );
-                  })}
+                  {renderNavButtons(true)}
                 </div>
 
                 {/* TX Status */}
