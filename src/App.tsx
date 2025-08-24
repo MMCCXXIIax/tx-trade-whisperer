@@ -1,7 +1,7 @@
 // src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
-import AuthPage from '@/pages/Auth'
+import AuthPage from '@/pages/AuthPage'
 import WelcomePage from '@/pages/Welcome'
 import DashboardPage from '@/pages/Dashboard'
 import NotFoundPage from '@/pages/NotFound'
