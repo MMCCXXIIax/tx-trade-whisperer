@@ -1,77 +1,76 @@
-/* Modern fonts already imported in index.html */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* TX Color Palette */
-  --tx-green: #00ff88;
-  --tx-black: #121212;
-  --tx-gray: #1e1e1e;
-  --tx-red: #ff5555;
-  --tx-blue: #0066ff;
-  --tx-orange: #ff9900;
+/* TX Color Palette in HSL */
+@layer base {
+  :root {
+    --tx-green: 152 100% 50%; /* #00ff88 */
+    --tx-black: 0 0% 7%;      /* #121212 */
+    --tx-gray: 0 0% 12%;      /* #1e1e1e */
+    --tx-red: 0 100% 67%;     /* #ff5555 */
+    --tx-blue: 210 100% 50%;  /* #0066ff */
+    --tx-orange: 36 100% 50%; /* #ff9900 */
 
-  /* Semantic tokens */
-  --background: var(--tx-black);
-  --foreground: #ffffff;
-  --primary: var(--tx-green);
-  --primary-foreground: var(--tx-black);
-  --secondary: var(--tx-gray);
-  --secondary-foreground: #ffffff;
-  --accent: var(--tx-blue);
-  --accent-foreground: #ffffff;
-  --destructive: var(--tx-red);
-  --destructive-foreground: #ffffff;
-  --muted: #666666;
-  --muted-foreground: #aaaaaa;
-  --card: var(--tx-gray);
-  --card-foreground: #ffffff;
-  --border: #333333;
-  --input: #252525;
-  --ring: var(--tx-green);
-
-  /* Terminal effects */
-  --terminal-glow: 0 0 20px var(--tx-green);
-  --terminal-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
-  
-  /* Animations */
-  --pulse-glow: pulse-glow 2s infinite;
-  --flicker: flicker 0.15s infinite linear;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 5px var(--tx-green), 0 0 10px var(--tx-green), 0 0 15px var(--tx-green);
+    /* Map Tailwind semantic tokens to TX palette */
+    --background: var(--tx-black);
+    --foreground: 0 0% 100%;
+    --primary: var(--tx-green);
+    --primary-foreground: var(--tx-black);
+    --secondary: var(--tx-gray);
+    --secondary-foreground: 0 0% 100%;
+    --accent: var(--tx-blue);
+    --accent-foreground: 0 0% 100%;
+    --destructive: var(--tx-red);
+    --destructive-foreground: 0 0% 100%;
+    --muted: 0 0% 40%;
+    --muted-foreground: 0 0% 67%;
+    --card: var(--tx-gray);
+    --card-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: var(--tx-green);
   }
-  50% { 
-    box-shadow: 0 0 10px var(--tx-green), 0 0 20px var(--tx-green), 0 0 30px var(--tx-green);
+
+  .dark {
+    --background: var(--tx-black);
+    --foreground: 0 0% 100%;
+    --card: var(--tx-gray);
+    --card-foreground: 0 0% 100%;
+    --popover: var(--tx-gray);
+    --popover-foreground: 0 0% 100%;
+    --primary: var(--tx-green);
+    --primary-foreground: var(--tx-black);
+    --secondary: var(--tx-gray);
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 40%;
+    --muted-foreground: 0 0% 67%;
+    --accent: var(--tx-blue);
+    --accent-foreground: 0 0% 100%;
+    --destructive: var(--tx-red);
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: var(--tx-green);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
   }
 }
 
-@keyframes flicker {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
-@keyframes terminal-scan {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100vw); }
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  background: var(--background);
-  color: var(--foreground);
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
-
+/* Terminal container styling */
 .terminal-container {
-  background: var(--secondary);
-  border: 1px solid var(--border);
+  background: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border));
   border-radius: 8px;
   position: relative;
   overflow: hidden;
@@ -84,160 +83,30 @@ body {
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--tx-green), transparent);
+  background: linear-gradient(90deg, transparent, hsl(var(--tx-green)), transparent);
   animation: terminal-scan 3s infinite;
   z-index: 10;
 }
 
+/* Animations */
+@keyframes terminal-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px hsl(var(--tx-green)), 0 0 10px hsl(var(--tx-green)), 0 0 15px hsl(var(--tx-green)); }
+  50% { box-shadow: 0 0 10px hsl(var(--tx-green)), 0 0 20px hsl(var(--tx-green)), 0 0 30px hsl(var(--tx-green)); }
+}
+
 .alert-glow {
-  animation: var(--pulse-glow);
-  border: 2px solid var(--tx-red);
-}
-
-.pattern-detected {
-  background: var(--accent);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.status-idle {
-  color: var(--muted);
-}
-
-.status-error {
-  color: var(--destructive);
-}
-
-.tx-button {
-  font-family: 'Inter', sans-serif;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-}
-
-.tx-button:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--terminal-glow);
-}
-
-.tx-button-primary {
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-
-.tx-button-secondary {
-  background: var(--secondary);
-  color: var(--foreground);
-}
-
-.tx-button-destructive {
-  background: var(--destructive);
-  color: var(--destructive-foreground);
-}
-
-.tx-button-accent {
-  background: var(--accent);
-  color: var(--accent-foreground);
-}
-
-.price-display {
-  font-feature-settings: "tnum";
-  font-weight: bold;
-}
-
-/* Grid background animation */
-.grid-background {
-  background-image: 
-    linear-gradient(rgba(0, 255, 136, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
-  background-size: 50px 50px;
-  width: 100%;
-  height: 100%;
-  animation: grid-move 20s linear infinite;
-}
-
-@keyframes grid-move {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(50px, 50px); }
-}
-
-/* Enhanced animations */
-@keyframes fade-in {
-  0% { opacity: 0; transform: translateY(20px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scale-in {
-  0% { opacity: 0; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-@keyframes slide-in-right {
-  0% { opacity: 0; transform: translateX(30px); }
-  100% { opacity: 1; transform: translateX(0); }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.4s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.5s ease-out;
-}
-
-/* Terminal input styling */
-.terminal-input {
-  background: var(--input);
-  border: 1px solid var(--border);
-  color: var(--foreground);
-  font-family: 'JetBrains Mono', 'Consolas', monospace;
-}
-
-.trading-numbers {
-  font-family: 'JetBrains Mono', 'Consolas', monospace;
-  font-feature-settings: "tnum";
-}
-
-.terminal-input:focus {
-  border-color: var(--tx-green);
-  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.2);
-}
-
-/* Engagement elements */
-.pulse-slow {
-  animation: pulse 3s infinite;
-}
-
-.glow-text {
-  text-shadow: 0 0 10px var(--tx-green);
-}
-
-/* Interactive hover effects */
-.hover-lift:hover {
-  transform: translateY(-2px);
-  transition: transform 0.2s ease;
-}
-
-.hover-glow:hover {
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-  transition: box-shadow 0.3s ease;
+  animation: pulse-glow 2s infinite;
+  border: 2px solid hsl(var(--tx-red));
 }
 
 /* Status indicators */
 .status-active {
-  background: linear-gradient(45deg, var(--tx-green), rgba(0, 255, 136, 0.7));
+  background: linear-gradient(45deg, hsl(var(--tx-green)), hsla(var(--tx-green) / 0.7));
   background-size: 200% 200%;
   animation: gradient-shift 2s ease infinite;
 }
@@ -246,106 +115,4 @@ body {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
-}
-
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
 }
