@@ -20,10 +20,13 @@ function safeRequire<T>(pkg: string, fallback: T): T {
 const react = safeRequire<() => PluginOption>("@vitejs/plugin-react-swc", () => () => ({}));
 
 // Dev‑only component tagger (optional)
-const taggerPkg = safeRequire<any>("lovable-tagger", {});
-const componentTagger = typeof taggerPkg.componentTagger === "function"
-  ? taggerPkg.componentTagger
-  : undefined;
+let componentTagger: (() => PluginOption) | undefined;
+if (process.env.NODE_ENV === "development") {
+  const taggerPkg = safeRequire<any>("lovable-tagger", {});
+  if (typeof taggerPkg.componentTagger === "function") {
+    componentTagger = taggerPkg.componentTagger;
+  }
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
