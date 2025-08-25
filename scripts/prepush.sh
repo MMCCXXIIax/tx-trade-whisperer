@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+bash scripts/prepush.sh
 set -e
 
 FRONTEND_PATH="." # repo root — your frontend lives here
