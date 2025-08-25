@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-FRONTEND_PATH="." # adjust if your frontend is in a subfolder
-FRONTEND_FILE_PATTERNS="src/ package.json yarn.lock vite.config.ts tailwind.config.js"
+FRONTEND_PATH="." # repo root — your frontend lives here
+FRONTEND_FILE_PATTERNS="src/ package.json yarn.lock vite.config.ts tailwind.config.ts"
 
 echo "🚦 Pre-push sanity checks for TX frontend..."
 
