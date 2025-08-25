@@ -1,6 +1,4 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 bash scripts/prepush.sh
 set -e
 
