@@ -4,6 +4,7 @@ import AuthPage from '@/pages/AuthPage'
 import WelcomePage from '@/pages/Welcome'
 import TXDashboard from '@/components/TXDashboard'
 import NotFoundPage from '@/pages/NotFound'
+import AuthLoading from '@/pages/AuthLoading' // <-- new page
 
 export default function App() {
   return (
@@ -11,6 +12,9 @@ export default function App() {
       <Routes>
         {/* Public route but blocked for logged-in users */}
         <Route path="/auth" element={<ProtectedRoute allowGuests><AuthPage /></ProtectedRoute>} />
+
+        {/* Public route for post-OAuth session hydration */}
+        <Route path="/auth-loading" element={<AuthLoading />} />
 
         {/* Protected onboarding route */}
         <Route
