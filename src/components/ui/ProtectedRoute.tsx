@@ -65,6 +65,10 @@ export default function ProtectedRoute({
 
   // Guest logic
   if (status === 'guest') {
+    // If we just came from OAuth callback, go to /auth-loading
+    if (location.pathname.startsWith('/auth/v1/callback')) {
+      return <Navigate to="/auth-loading" replace />
+    }
     return allowGuests ? children : <Navigate to="/auth" replace />
   }
 
