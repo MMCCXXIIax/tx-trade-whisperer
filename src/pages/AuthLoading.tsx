@@ -1,4 +1,3 @@
-// src/pages/AuthLoading.tsx
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabaseClient'
@@ -10,6 +9,7 @@ export default function AuthLoading() {
     let mounted = true
 
     const finishAuth = async () => {
+      // Wait for Supabase to hydrate session
       const { data: { session } } = await supabase.auth.getSession()
       if (!mounted) return
 
@@ -18,6 +18,7 @@ export default function AuthLoading() {
         return
       }
 
+      // Check profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
