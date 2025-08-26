@@ -1,4 +1,3 @@
-// src/pages/AuthPage.tsx
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Auth } from '@supabase/auth-ui-react'
@@ -51,17 +50,39 @@ export default function AuthPage() {
       navigate('/dashboard', { replace: true })
     } else {
       console.error('❌ Profile save failed:', result.error)
-      // Optional: show toast or error UI here
     }
   }
 
   if (loading) return null
 
   return (
-    <div style={{ maxWidth: 420, margin: '2rem auto' }}>
+    <div className="bg-background text-foreground p-6 rounded-lg shadow-lg max-w-md mx-auto mt-12">
       <Auth
         supabaseClient={supabase}
-        appearance={{ theme: ThemeSupa }}
+        appearance={{
+          theme: ThemeSupa,
+          variables: {
+            default: {
+              colors: {
+                brand: 'hsl(152, 100%, 50%)', // --tx-green
+                brandAccent: 'hsl(210, 100%, 50%)', // --tx-blue
+                brandButtonText: 'hsl(0, 0%, 7%)', // --tx-black
+                inputBackground: 'hsl(0, 0%, 12%)', // --tx-gray
+                inputText: 'white',
+                inputBorder: 'hsl(0, 0%, 20%)',
+              },
+              fonts: {
+                bodyFontFamily: 'Inter, sans-serif',
+                buttonFontFamily: 'Inter, sans-serif',
+                inputFontFamily: 'Inter, sans-serif',
+              },
+              radii: {
+                borderRadiusButton: '6px',
+                borderRadiusInput: '6px',
+              },
+            },
+          },
+        }}
         providers={['google', 'github', 'discord']}
         magicLink
         redirectTo={window.location.origin + '/dashboard'}
