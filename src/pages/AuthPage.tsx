@@ -86,6 +86,10 @@ export default function AuthPage() {
         providers={['google', 'github', 'discord']}
         magicLink
         redirectTo={window.location.origin + '/dashboard'}
+        captcha={{
+          provider: 'hcaptcha',
+          siteKey: import.meta.env.VITE_HCAPTCHA_SITE_KEY
+        }}
       />
     </div>
   )
