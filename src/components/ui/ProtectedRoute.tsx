@@ -14,6 +14,11 @@ export default function ProtectedRoute({
   const [status, setStatus] = useState<Status>('checking')
   const location = useLocation()
 
+  // 🚫 Skip all checks for /auth-loading — it's public
+  if (location.pathname === '/auth-loading') {
+    return children
+  }
+
   useEffect(() => {
     let mounted = true
 
@@ -61,25 +66,21 @@ export default function ProtectedRoute({
     }
   }, [])
 
-  // ✅ Fix: If still checking but guests are allowed (e.g., /auth), render immediately
+  // Allow guests to see pages like /auth immediately
   if (status === 'checking') {
     if (allowGuests) return children
-    return null // still block protected routes until check finishes
+    return null
   }
 
   // Guest logic
   if (status === 'guest') {
-    // If we just came from OAuth callback, go to /auth-loading
-    if (location.pathname.startsWith('/auth/v1/callback')) {
-      return <Navigate to="/auth-loading" replace />
-    }
     return allowGuests ? children : <Navigate to="/auth" replace />
   }
 
   // Logged in but no profile → force onboarding
   if (status === 'needsProfile' && location.pathname !== '/welcome') {
-  return <Navigate to="/welcome" replace />
-}
+    return <Navigate to="/welcome" replace />
+  }
 
   // Logged in and has profile → block /auth and /welcome
   if (status === 'ready') {
