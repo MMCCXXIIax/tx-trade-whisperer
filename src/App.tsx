@@ -10,7 +10,7 @@ export default function App() {
     <Router>
       <Routes>
         {/* Public route */}
-        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/auth" element={<ProtectedRoute allowGuests><AuthPage /></ProtectedRoute>} />
 
         {/* Protected onboarding route */}
         <Route
