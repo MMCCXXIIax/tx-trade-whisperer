@@ -12,9 +12,7 @@ export default function App() {
       <Routes>
         {/* Public route but blocked for logged-in users */}
         <Route path="/auth" element={<ProtectedRoute allowGuests><AuthPage /></ProtectedRoute>} />
-
-        {/* Public route for post-OAuth session hydration */}
-        <Route path="/auth-loading" element={<AuthLoading />} />
+        <Route path="/auth-loading" element={<AuthLoading />} /> {/* public */}
 
         {/* Protected onboarding route */}
         <Route
