@@ -24,7 +24,7 @@ export default function App() {
 
         {/* Protected main app route */}
         <Route
-          path="/dashboard"
+          path="/tx-dashboard"
           element={
             <ProtectedRoute>
               <TXDashboard />
