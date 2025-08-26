@@ -1,4 +1,3 @@
-// vite.config.ts
 import { defineConfig, PluginOption } from "vite";
 import path from "path";
 
@@ -17,14 +16,17 @@ function safeRequire<T>(pkg: string, fallback: T): T {
 }
 
 // Core React plugin (required for both dev & prod)
-const react = safeRequire<() => PluginOption>("@vitejs/plugin-react-swc", () => () => ({}));
+const react = safeRequire<PluginOption>(
+  "@vitejs/plugin-react-swc",
+  { name: "noop-react-plugin" } // valid plugin object fallback
+);
 
 // Dev‑only component tagger (optional)
-let componentTagger: (() => PluginOption) | undefined;
+let componentTagger: PluginOption | undefined;
 if (process.env.NODE_ENV === "development") {
   const taggerPkg = safeRequire<any>("lovable-tagger", {});
   if (typeof taggerPkg.componentTagger === "function") {
-    componentTagger = taggerPkg.componentTagger;
+    componentTagger = taggerPkg.componentTagger();
   }
 }
 
@@ -35,9 +37,9 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [
-    react(),
-    mode === "development" && componentTagger?.(),
-  ].filter(Boolean),
+    react,
+    mode === "development" && componentTagger,
+  ].filter(Boolean) as PluginOption[],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
