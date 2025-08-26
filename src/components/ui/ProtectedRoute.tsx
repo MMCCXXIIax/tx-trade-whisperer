@@ -4,7 +4,13 @@ import { supabase } from '@/lib/supabaseClient'
 
 type Status = 'checking' | 'guest' | 'needsProfile' | 'ready'
 
-export default function ProtectedRoute({ children }: { children: JSX.Element }) {
+export default function ProtectedRoute({
+  children,
+  allowGuests = false
+}: {
+  children: JSX.Element
+  allowGuests?: boolean
+}) {
   const [status, setStatus] = useState<Status>('checking')
   const location = useLocation()
 
@@ -12,7 +18,6 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
     let mounted = true
 
     const checkAuthAndProfile = async () => {
-      // 1. Check session
       const { data: { session } } = await supabase.auth.getSession()
       if (!mounted) return
 
@@ -21,7 +26,6 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
         return
       }
 
-      // 2. Check if profile exists in public.profiles
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('id')
@@ -30,7 +34,7 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
 
       if (error) {
         console.error('Error fetching profile:', error)
-        setStatus('guest') // fallback to login
+        setStatus('guest')
         return
       }
 
@@ -59,17 +63,21 @@ export default function ProtectedRoute({ children }: { children: JSX.Element }) 
 
   if (status === 'checking') return null
 
-  // Not logged in → go to /auth
-  if (status === 'guest') return <Navigate to="/auth" replace />
+  // Guest logic
+  if (status === 'guest') {
+    return allowGuests ? children : <Navigate to="/auth" replace />
+  }
 
-  // Logged in but no profile → go to /welcome
+  // Logged in but no profile → force onboarding
   if (status === 'needsProfile' && location.pathname !== '/welcome') {
     return <Navigate to="/welcome" replace />
   }
 
-  // Logged in and has profile → if they try to hit /welcome, send to dashboard
-  if (status === 'ready' && location.pathname === '/welcome') {
-    return <Navigate to="/dashboard" replace />
+  // Logged in and has profile → block /auth and /welcome
+  if (status === 'ready') {
+    if (location.pathname === '/auth' || location.pathname === '/welcome') {
+      return <Navigate to="/tx-dashboard" replace />
+    }
   }
 
   return children
