@@ -17,7 +17,8 @@ export default function AuthPage() {
       if (!mounted) return
 
       if (session?.user) {
-        await handleProfileSaveAndRedirect(session.user)
+        await handleProfileSave(session.user)
+        navigate('/tx-dashboard', { replace: true })
       }
 
       setLoading(false)
@@ -25,7 +26,8 @@ export default function AuthPage() {
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        await handleProfileSaveAndRedirect(session.user)
+        await handleProfileSave(session.user)
+        navigate('/tx-dashboard', { replace: true })
       }
     })
 
@@ -36,7 +38,7 @@ export default function AuthPage() {
     }
   }, [navigate])
 
-  const handleProfileSaveAndRedirect = async (user: any) => {
+  const handleProfileSave = async (user: any) => {
     const payload = {
       id: user.id,
       name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
@@ -45,10 +47,7 @@ export default function AuthPage() {
     }
 
     const result = await saveProfile(payload)
-
-    if (result.success) {
-      navigate('/tx-dashboard', { replace: true }) // updated route
-    } else {
+    if (!result.success) {
       console.error('❌ Profile save failed:', result.error)
     }
   }
@@ -88,7 +87,7 @@ export default function AuthPage() {
         }}
         providers={['google', 'github', 'discord']}
         magicLink
-        redirectTo={window.location.origin + '/tx-dashboard'} // updated redirect
+        redirectTo={window.location.origin + '/auth-loading'} // <-- now goes to auth-loading
         captcha={{
           provider: 'hcaptcha',
           siteKey: import.meta.env.VITE_HCAPTCHA_SITE_KEY
