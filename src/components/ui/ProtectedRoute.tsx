@@ -61,7 +61,11 @@ export default function ProtectedRoute({
     }
   }, [])
 
-  if (status === 'checking') return null
+  // ✅ Fix: If still checking but guests are allowed (e.g., /auth), render immediately
+  if (status === 'checking') {
+    if (allowGuests) return children
+    return null // still block protected routes until check finishes
+  }
 
   // Guest logic
   if (status === 'guest') {
