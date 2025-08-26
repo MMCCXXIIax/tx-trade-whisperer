@@ -78,8 +78,8 @@ export default function ProtectedRoute({
 
   // Logged in but no profile → force onboarding
   if (status === 'needsProfile' && location.pathname !== '/welcome') {
-    return <Navigate to="/welcome" replace />
-  }
+  return <Navigate to="/welcome" replace />
+}
 
   // Logged in and has profile → block /auth and /welcome
   if (status === 'ready') {
