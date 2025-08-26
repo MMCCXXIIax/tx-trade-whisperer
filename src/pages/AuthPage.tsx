@@ -47,7 +47,7 @@ export default function AuthPage() {
     const result = await saveProfile(payload)
 
     if (result.success) {
-      navigate('/dashboard', { replace: true })
+      navigate('/tx-dashboard', { replace: true }) // updated route
     } else {
       console.error('❌ Profile save failed:', result.error)
     }
@@ -82,10 +82,13 @@ export default function AuthPage() {
               },
             },
           },
+          labels: {
+            social_provider_text: 'Continue with'
+          }
         }}
         providers={['google', 'github', 'discord']}
         magicLink
-        redirectTo={window.location.origin + '/dashboard'}
+        redirectTo={window.location.origin + '/tx-dashboard'} // updated redirect
         captcha={{
           provider: 'hcaptcha',
           siteKey: import.meta.env.VITE_HCAPTCHA_SITE_KEY
