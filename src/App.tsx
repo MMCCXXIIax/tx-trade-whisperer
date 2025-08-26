@@ -9,7 +9,7 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public route */}
+        {/* Public route but blocked for logged-in users */}
         <Route path="/auth" element={<ProtectedRoute allowGuests><AuthPage /></ProtectedRoute>} />
 
         {/* Protected onboarding route */}
