@@ -4,37 +4,25 @@ import AuthPage from '@/pages/AuthPage'
 import WelcomePage from '@/pages/Welcome'
 import TXDashboard from '@/components/TXDashboard'
 import NotFoundPage from '@/pages/NotFound'
-import AuthLoading from '@/pages/AuthLoading' // <-- new page
+import AuthLoading from '@/pages/AuthLoading' // public route
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public route but blocked for logged-in users */}
+        {/* Public login page */}
         <Route path="/auth" element={<ProtectedRoute allowGuests><AuthPage /></ProtectedRoute>} />
-        <Route path="/auth-loading" element={<AuthLoading />} /> {/* public */}
+        
+        {/* Public post-OAuth session hydration page */}
+        <Route path="/auth-loading" element={<AuthLoading />} />
 
-        {/* Protected onboarding route */}
-        <Route
-          path="/welcome"
-          element={
-            <ProtectedRoute>
-              <WelcomePage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Onboarding */}
+        <Route path="/welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
 
-        {/* Protected main app route */}
-        <Route
-          path="/tx-dashboard"
-          element={
-            <ProtectedRoute>
-              <TXDashboard />
-            </ProtectedRoute>
-          }
-        />
+        {/* Main dashboard */}
+        <Route path="/tx-dashboard" element={<ProtectedRoute><TXDashboard /></ProtectedRoute>} />
 
-        {/* Default route → Auth */}
+        {/* Default */}
         <Route path="/" element={<Navigate to="/auth" replace />} />
 
         {/* Catch-all */}
