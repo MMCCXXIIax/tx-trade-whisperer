@@ -14,7 +14,7 @@ export default function ProtectedRoute({
   const [status, setStatus] = useState<Status>('checking')
   const location = useLocation()
 
-  // 🚫 Skip all checks for /auth-loading — it's public
+  // 🚫 Skip guard for auth-loading
   if (location.pathname === '/auth-loading') {
     return children
   }
@@ -66,23 +66,20 @@ export default function ProtectedRoute({
     }
   }, [])
 
-  // Allow guests to see pages like /auth immediately
+  // Let guest-allowed routes render immediately
   if (status === 'checking') {
     if (allowGuests) return children
     return null
   }
 
-  // Guest logic
   if (status === 'guest') {
     return allowGuests ? children : <Navigate to="/auth" replace />
   }
 
-  // Logged in but no profile → force onboarding
   if (status === 'needsProfile' && location.pathname !== '/welcome') {
     return <Navigate to="/welcome" replace />
   }
 
-  // Logged in and has profile → block /auth and /welcome
   if (status === 'ready') {
     if (location.pathname === '/auth' || location.pathname === '/welcome') {
       return <Navigate to="/tx-dashboard" replace />
