@@ -85,7 +85,7 @@ export default function AuthPage() {
             social_provider_text: 'Continue with'
           }
         }}
-        providers={['google', 'github', 'discord']}
+        providers={['github', 'discord']}
         magicLink
         redirectTo={window.location.origin + '/auth-loading'} // <-- now goes to auth-loading
         captcha={{
