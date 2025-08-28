@@ -89,8 +89,8 @@ export default function AuthPage() {
         magicLink
         redirectTo={window.location.origin + '/auth-loading'} // <-- now goes to auth-loading
         captcha={{
-          provider: 'hcaptcha',
-          siteKey: import.meta.env.VITE_HCAPTCHA_SITE_KEY
+          provider: 'turnstile',
+          siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY
         }}
       />
     </div>
