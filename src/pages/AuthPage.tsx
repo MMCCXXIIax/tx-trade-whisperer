@@ -88,9 +88,9 @@ export default function AuthPage() {
         providers={['github', 'discord']}
         magicLink
         redirectTo={window.location.origin + '/auth-loading'} // <-- now goes to auth-loading
-        captcha={{
-          provider: 'turnstile',
-          siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY
+        // captcha={{
+          // provider: 'turnstile',
+          // siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY
         }}
       />
     </div>
