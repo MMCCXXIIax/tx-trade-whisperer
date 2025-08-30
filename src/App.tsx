@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/AuthPage'
-import WelcomePage from '@/pages/Welcome'
+import Welcome from '@/pages/Welcome'
 import TXDashboard from '@/components/TXDashboard'
 import NotFoundPage from '@/pages/NotFound'
 import AuthLoading from '@/pages/AuthLoading' // public route
@@ -17,7 +17,7 @@ export default function App() {
         <Route path="/auth-loading" element={<AuthLoading />} />
 
         {/* Onboarding */}
-        <Route path="/welcome" element={<ProtectedRoute><WelcomePage /></ProtectedRoute>} />
+        <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
 
         {/* Main dashboard */}
         <Route path="/tx-dashboard" element={<ProtectedRoute><TXDashboard /></ProtectedRoute>} />
