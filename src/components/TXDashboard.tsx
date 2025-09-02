@@ -42,7 +42,7 @@ interface AppState {
   user_count?: number;
 }
 
-const API_BASE = "/api";
+const API_BASE = "https://tx-backend.onrender.com/api";
 
 export const safeFetch = async <T,>(
   path: string,
