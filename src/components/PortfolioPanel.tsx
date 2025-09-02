@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 import { safeFetch } from './TXDashboard';
 
 interface Position {
@@ -28,9 +29,33 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
 
   const fetchPortfolio = async () => {
     setError(null);
-    const json = await safeFetch<PortfolioData | { portfolio?: PortfolioData }>('/api/portfolio');
+    const json = await safeFetch<any>('/api/portfolio');
+
     if (json) {
-      setData((json as any).portfolio || (json as PortfolioData));
+      let normalized: PortfolioData | null = null;
+
+      if (Array.isArray(json)) {
+        // Raw Supabase array
+        normalized = {
+          positions: json.map((row: any) => ({
+            symbol: row.asset,
+            qty: row.quantity
+          }))
+        };
+      } else if (Array.isArray(json.portfolio)) {
+        // Supabase array wrapped in { portfolio: [...] }
+        normalized = {
+          positions: json.portfolio.map((row: any) => ({
+            symbol: row.asset,
+            qty: row.quantity
+          }))
+        };
+      } else {
+        // Old TXEngine shape
+        normalized = json.portfolio || json;
+      }
+
+      setData(normalized);
     } else {
       setError('Failed to load portfolio');
     }
