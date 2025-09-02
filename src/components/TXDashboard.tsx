@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
+import './TXDashboard.css';
 
 interface AssetResult {
   symbol: string;
@@ -39,11 +40,11 @@ interface AppState {
   alerts: Alert[];
   paper_trades: any[];
   last_signal: LastSignal | null;
+  user_count?: number;
 }
 
 const API_BASE = "/api";
 
-// 🔹 Shared safeFetch helper
 export const safeFetch = async <T,>(
   path: string,
   options?: RequestInit,
@@ -69,7 +70,7 @@ export const safeFetch = async <T,>(
 
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
-  const [countdown, setCountdown] = useState(120);
+  const [countdown, setCountdown] = useState(180);
   const [activeAlert, setActiveAlert] = useState<Alert | null>(null);
   const [lastAlertId, setLastAlertId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -78,7 +79,6 @@ const TXDashboard: React.FC = () => {
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval>>();
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval>>();
 
-  // ⏳ Data fetchers
   const fetchScanData = async () => {
     const data = await safeFetch<AppState>('/api/scan');
     setAppState(data);
@@ -104,7 +104,6 @@ const TXDashboard: React.FC = () => {
     }
   };
 
-  // ⏱ Countdown + polling
   useEffect(() => {
     countdownIntervalRef.current = setInterval(() => {
       setCountdown((prev) => {
@@ -136,16 +135,63 @@ const TXDashboard: React.FC = () => {
     <div className="grid md:grid-cols-3 gap-6">
       {/* Main dashboard left */}
       <div className="md:col-span-2">
-        {appState ? (
-          <pre className="text-xs text-white bg-black p-4 rounded overflow-x-auto">
-            {JSON.stringify(appState, null, 2)}
-          </pre>
-        ) : (
-          <div className="text-muted-foreground">No scan data available</div>
-        )}
-      </div>
+        <div className="terminal">
+          <div className="tx-header">
+            <div className="tx-logo">TX PREDICTIVE INTELLIGENCE</div>
+            <div className="tx-tagline">
+              AI-Powered Market Anticipation System | Kampala, Uganda
+            </div>
+          </div>
 
-      {/* Portfolio panel removed */}
+          <div className="asset-grid">
+            {appState?.last_scan?.results?.map((r) => (
+              <div className="asset-row" key={r.symbol}>
+                <span className="asset-name">{r.symbol}</span>
+                <span className="asset-price">{r.price || 'N/A'}</span>
+                <span
+                  className={
+                    r.status === 'pattern' ? 'pattern-detected' : 'no-pattern'
+                  }
+                >
+                  {r.status === 'pattern'
+                    ? `${r.pattern} (${r.confidence})`
+                    : 'IDLE'}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 20, color: '#666' }}>
+            Next scan in: {countdown}s
+          </div>
+
+          {appState?.last_signal && (
+            <div
+              style={{
+                background: '#0d1a26',
+                padding: 10,
+                borderRadius: 4,
+                margin: '20px 0',
+              }}
+            >
+              <div style={{ color: 'var(--tx-green)', fontWeight: 'bold' }}>
+                🚨 Latest Signal
+              </div>
+              <div>
+                {appState.last_signal.symbol} {appState.last_signal.timeframe}:{' '}
+                {appState.last_signal.pattern} ({appState.last_signal.confidence})
+              </div>
+              <div style={{ fontSize: 12, color: '#777' }}>
+                {appState.last_signal.time}
+              </div>
+            </div>
+          )}
+
+          <div style={{ margin: '15px 0', fontSize: 12, color: '#555' }}>
+            ⚡ <strong>{appState?.user_count || 0} traders</strong> live
+          </div>
+        </div>
+      </div>
 
       <audio ref={alertAudioRef} />
     </div>
