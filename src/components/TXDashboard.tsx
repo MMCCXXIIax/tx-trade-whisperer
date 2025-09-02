@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import PortfolioPanel from './PortfolioPanel';
 
 interface AssetResult {
   symbol: string;
@@ -146,14 +145,14 @@ const TXDashboard: React.FC = () => {
         {/* Your existing dashboard UI here */}
       </div>
 
-      {/* Portfolio panel right */}
+      {/* Portfolio panel right 
       <div>
         <PortfolioPanel
           onSelectSymbol={(sym) => {
             console.log('Selected symbol from portfolio:', sym);
           }}
         />
-      </div>
+      </div>*/}
 
       <audio ref={alertAudioRef} />
     </div>
