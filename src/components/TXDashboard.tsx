@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from '@/hooks/use-toast';
-import './TXDashboard.css';
 
 interface AssetResult {
   symbol: string;
@@ -71,7 +70,6 @@ export const safeFetch = async <T,>(
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
   const [countdown, setCountdown] = useState(180);
-  const [activeAlert, setActiveAlert] = useState<Alert | null>(null);
   const [lastAlertId, setLastAlertId] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +88,6 @@ const TXDashboard: React.FC = () => {
     if (data?.alerts?.length) {
       const newAlert = data.alerts[0];
       if (newAlert.symbol + newAlert.time !== lastAlertId) {
-        setActiveAlert(newAlert);
         setLastAlertId(newAlert.symbol + newAlert.time);
         if (soundEnabled && alertAudioRef.current) {
           alertAudioRef.current.play().catch(() => null);
@@ -135,22 +132,31 @@ const TXDashboard: React.FC = () => {
     <div className="grid md:grid-cols-3 gap-6">
       {/* Main dashboard left */}
       <div className="md:col-span-2">
-        <div className="terminal">
-          <div className="tx-header">
-            <div className="tx-logo">TX PREDICTIVE INTELLIGENCE</div>
-            <div className="tx-tagline">
+        <div className="terminal-container p-4 max-w-3xl mx-auto">
+          {/* Header */}
+          <div className="border-b border-border pb-2 mb-4">
+            <h1 className="text-[hsl(var(--tx-green))] text-xl font-bold">
+              TX PREDICTIVE INTELLIGENCE
+            </h1>
+            <p className="text-muted-foreground text-sm">
               AI-Powered Market Anticipation System | Kampala, Uganda
-            </div>
+            </p>
           </div>
 
-          <div className="asset-grid">
+          {/* Asset list */}
+          <div>
             {appState?.last_scan?.results?.map((r) => (
-              <div className="asset-row" key={r.symbol}>
-                <span className="asset-name">{r.symbol}</span>
-                <span className="asset-price">{r.price || 'N/A'}</span>
+              <div
+                key={r.symbol}
+                className="flex justify-between border-b border-border py-2"
+              >
+                <span className="font-bold text-[hsl(var(--tx-green))]">{r.symbol}</span>
+                <span>{r.price || 'N/A'}</span>
                 <span
                   className={
-                    r.status === 'pattern' ? 'pattern-detected' : 'no-pattern'
+                    r.status === 'pattern'
+                      ? 'pattern-detected px-2 rounded'
+                      : 'no-pattern'
                   }
                 >
                   {r.status === 'pattern'
@@ -161,33 +167,27 @@ const TXDashboard: React.FC = () => {
             ))}
           </div>
 
-          <div style={{ marginTop: 20, color: '#666' }}>
+          {/* Countdown */}
+          <div className="mt-4 text-muted-foreground text-sm">
             Next scan in: {countdown}s
           </div>
 
+          {/* Latest Signal */}
           {appState?.last_signal && (
-            <div
-              style={{
-                background: '#0d1a26',
-                padding: 10,
-                borderRadius: 4,
-                margin: '20px 0',
-              }}
-            >
-              <div style={{ color: 'var(--tx-green)', fontWeight: 'bold' }}>
-                🚨 Latest Signal
-              </div>
+            <div className="bg-[#0d1a26] p-3 rounded mt-4">
+              <div className="text-[hsl(var(--tx-green))] font-bold">🚨 Latest Signal</div>
               <div>
                 {appState.last_signal.symbol} {appState.last_signal.timeframe}:{' '}
                 {appState.last_signal.pattern} ({appState.last_signal.confidence})
               </div>
-              <div style={{ fontSize: 12, color: '#777' }}>
+              <div className="text-xs text-muted-foreground">
                 {appState.last_signal.time}
               </div>
             </div>
           )}
 
-          <div style={{ margin: '15px 0', fontSize: 12, color: '#555' }}>
+          {/* Trader count */}
+          <div className="mt-4 text-xs text-muted-foreground">
             ⚡ <strong>{appState?.user_count || 0} traders</strong> live
           </div>
         </div>
