@@ -4,17 +4,24 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { safeFetch } from './TXDashboard';
+import { supabase } from '@/lib/supabaseClient'; // adjust import path if needed
 
 interface Position {
   symbol?: string;
   ticker?: string;
   qty?: number;
   quantity?: number;
+  avg_price?: number;
 }
 
 interface PortfolioData {
   positions?: Position[];
   open_positions?: Position[];
+  balance?: number;
+  invested?: number;
+  total_equity?: number;
+  realized_pnl?: number;
+  unrealized_pnl?: number;
   [key: string]: any;
 }
 
@@ -29,27 +36,28 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
 
   const fetchPortfolio = async () => {
     setError(null);
-    const json = await safeFetch<any>('/api/portfolio');
+
+    // 🔹 Get the logged-in user's ID from Supabase Auth
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
+
+    if (!userId) {
+      setError('No logged-in user');
+      return;
+    }
+
+    // 🔹 Pass user_id as query param
+    const json = await safeFetch<any>(`/api/portfolio?user_id=${encodeURIComponent(userId)}`);
 
     if (json) {
       let normalized: PortfolioData | null = null;
 
       if (Array.isArray(json)) {
         // Raw Supabase array
-        normalized = {
-          positions: json.map((row: any) => ({
-            symbol: row.asset,
-            qty: row.quantity
-          }))
-        };
+        normalized = normalizeFromRows(json);
       } else if (Array.isArray(json.portfolio)) {
         // Supabase array wrapped in { portfolio: [...] }
-        normalized = {
-          positions: json.portfolio.map((row: any) => ({
-            symbol: row.asset,
-            qty: row.quantity
-          }))
-        };
+        normalized = normalizeFromRows(json.portfolio);
       } else {
         // Old TXEngine shape
         normalized = json.portfolio || json;
@@ -59,6 +67,31 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
     } else {
       setError('Failed to load portfolio');
     }
+  };
+
+  // 🔹 Helper: normalize Supabase rows into positions + computed stats
+  const normalizeFromRows = (rows: any[]): PortfolioData => {
+    const positions = rows.map((row) => ({
+      symbol: row.asset,
+      qty: Number(row.quantity),
+      avg_price: row.avg_price ? Number(row.avg_price) : undefined
+    }));
+
+    // Compute totals
+    const invested = positions.reduce((sum, p) => sum + (p.qty ?? 0) * (p.avg_price ?? 0), 0);
+    const balance = 0; // could be cash balance if tracked separately
+    const total_equity = invested + balance;
+    const unrealized_pnl = 0; // placeholder until we have live prices
+    const realized_pnl = 0;   // placeholder until we track closed trades
+
+    return {
+      positions,
+      invested,
+      balance,
+      total_equity,
+      unrealized_pnl,
+      realized_pnl
+    };
   };
 
   useEffect(() => {
