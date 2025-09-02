@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 
 interface AssetResult {
@@ -83,12 +81,8 @@ const TXDashboard: React.FC = () => {
   // ⏳ Data fetchers
   const fetchScanData = async () => {
     const data = await safeFetch<AppState>('/api/scan');
-    if (data) {
-      setAppState(data);
-      setIsLoading(false);
-    } else {
-      setIsLoading(false);
-    }
+    setAppState(data);
+    setIsLoading(false);
   };
 
   const checkForAlerts = async () => {
@@ -142,25 +136,16 @@ const TXDashboard: React.FC = () => {
     <div className="grid md:grid-cols-3 gap-6">
       {/* Main dashboard left */}
       <div className="md:col-span-2">
-        {/* Your existing dashboard UI here */}
-        <div className="md:col-span-2">
-  {appState ? (
-    <pre className="text-xs text-white bg-black p-4 rounded overflow-x-auto">
-      {JSON.stringify(appState, null, 2)}
-    </pre>
-  ) : (
-    <div className="text-muted-foreground">No scan data available</div>
-  )}
-</div>
-      
-      {/* Portfolio panel right 
-      <div>
-        <PortfolioPanel
-          onSelectSymbol={(sym) => {
-            console.log('Selected symbol from portfolio:', sym);
-          }}
-        />
-      </div>*/}
+        {appState ? (
+          <pre className="text-xs text-white bg-black p-4 rounded overflow-x-auto">
+            {JSON.stringify(appState, null, 2)}
+          </pre>
+        ) : (
+          <div className="text-muted-foreground">No scan data available</div>
+        )}
+      </div>
+
+      {/* Portfolio panel removed */}
 
       <audio ref={alertAudioRef} />
     </div>
