@@ -143,8 +143,16 @@ const TXDashboard: React.FC = () => {
       {/* Main dashboard left */}
       <div className="md:col-span-2">
         {/* Your existing dashboard UI here */}
-      </div>
-
+        <div className="md:col-span-2">
+  {appState ? (
+    <pre className="text-xs text-white bg-black p-4 rounded overflow-x-auto">
+      {JSON.stringify(appState, null, 2)}
+    </pre>
+  ) : (
+    <div className="text-muted-foreground">No scan data available</div>
+  )}
+</div>
+      
       {/* Portfolio panel right 
       <div>
         <PortfolioPanel
