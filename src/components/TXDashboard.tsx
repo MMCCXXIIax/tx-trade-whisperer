@@ -42,30 +42,8 @@ interface AppState {
   user_count?: number;
 }
 
-const API_BASE = "https://tx-backend.onrender.com/api";
-
-export const safeFetch = async <T,>(
-  path: string,
-  options?: RequestInit,
-  retries = 2
-): Promise<T | null> => {
-  try {
-    const res = await fetch(`${API_BASE}${path}`, options);
-    if (!res.ok) throw new Error(res.statusText);
-    return (await res.json()) as T;
-  } catch (err: any) {
-    console.error(`Fetch failed for ${path}:`, err);
-    if (retries > 0) {
-      return safeFetch<T>(path, options, retries - 1);
-    }
-    toast({
-      title: 'Connection Error',
-      description: err?.message || 'Some data may be out of date.',
-      variant: 'destructive',
-    });
-    return null;
-  }
-};
+// Use centralized API utilities
+import { safeFetch } from '@/lib/api';
 
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
@@ -78,13 +56,13 @@ const TXDashboard: React.FC = () => {
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchScanData = async () => {
-    const data = await safeFetch<AppState>('/api/scan');
+    const data = await safeFetch<AppState>('/scan');
     setAppState(data);
     setIsLoading(false);
   };
 
   const checkForAlerts = async () => {
-    const data = await safeFetch<{ alerts: Alert[] }>('/api/get_active_alerts');
+    const data = await safeFetch<{ alerts: Alert[] }>('/get_active_alerts');
     if (data?.alerts?.length) {
       const newAlert = data.alerts[0];
       if (newAlert.symbol + newAlert.time !== lastAlertId) {
@@ -193,7 +171,7 @@ const TXDashboard: React.FC = () => {
         </div>
       </div>
 
-      <audio ref={alertAudioRef} />
+      <audio ref={alertAudioRef} src="/alert.mp3" preload="auto" />
     </div>
   );
 };

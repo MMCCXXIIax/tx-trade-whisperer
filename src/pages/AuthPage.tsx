@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase } from '@/integrations/supabase/client'
 import { saveProfile } from '@/lib/saveProfile'
 
 export default function AuthPage() {
@@ -43,7 +43,7 @@ export default function AuthPage() {
       id: user.id,
       name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
       email: user.email || '',
-      mode: 'demo' // or 'broker' depending on your onboarding logic
+      mode: "demo" as const // or 'broker' depending on your onboarding logic
     }
 
     const result = await saveProfile(payload)
@@ -77,20 +77,14 @@ export default function AuthPage() {
               },
               radii: {
                 borderRadiusButton: '6px',
-                borderRadiusInput: '6px',
+                inputBorderRadius: '6px',
               },
             },
-          },
-          labels: {
-            social_provider_text: 'Continue with'
           }
         }}
         providers={['github', 'discord']}
         magicLink
         redirectTo={window.location.origin + '/auth-loading'} // <-- now goes to auth-loading
-        //captcha={{
-        //provider: 'turnstile',
-        //siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY
       />
     </div>
   )

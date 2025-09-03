@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, TrendingDown, PieChart, BarChart3, Play, Square, ShoppingCart } from 'lucide-react';
-import { safeFetch } from './TXDashboard'; // same helper as PortfolioPanel
+import { safeFetch } from '@/lib/api'; // same helper as PortfolioPanel
 
 interface PaperTrade {
   id: number;
@@ -36,7 +36,7 @@ interface TradingStats {
   avg_trade: number;
 }
 
-const API_BASE = "/api";
+// Use centralized API utilities
 
 const PaperTrading: React.FC = () => {
   const [paperTrades, setPaperTrades] = useState<PaperTrade[]>([]);
@@ -53,13 +53,13 @@ const PaperTrading: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchPaperTrades = async () => {
-    const json = await safeFetch<{ trades: PaperTrade[] }>(`${API_BASE}/api/get_paper_trades`);
-    if (json?.trades) setPaperTrades(json.trades);
+    const json = await safeFetch<{ paper_trades: PaperTrade[] }>('/paper-trades');
+    if (json?.paper_trades) setPaperTrades(json.paper_trades);
     setIsLoading(false);
   };
 
   const fetchTradingStats = async () => {
-    const json = await safeFetch<TradingStats>(`${API_BASE}/api/get_trading_stats`);
+    const json = await safeFetch<TradingStats>('/get_trading_stats');
     if (json) setTradingStats(json);
   };
 
@@ -69,15 +69,16 @@ const PaperTrading: React.FC = () => {
       return;
     }
     setIsTrading(true);
-    const result = await safeFetch(`${API_BASE}/api/paper-trade`, {
+    const result = await safeFetch('/paper-trades', {
       method: 'POST',
       body: JSON.stringify({
         symbol: symbol.toUpperCase(),
-        action,
-        quantity: parseFloat(quantity),
+        side: action.toLowerCase(),
+        qty: parseFloat(quantity),
         price: parseFloat(price),
+        pattern: 'Manual',
+        confidence: 1.0,
       }),
-      headers: { 'Content-Type': 'application/json' },
     });
     if (result) {
       toast({ title: 'Trade Placed', description: `${action} ${quantity} ${symbol.toUpperCase()} @ $${price}` });
@@ -91,14 +92,13 @@ const PaperTrading: React.FC = () => {
     setIsTrading(false);
   };
 
-  const closePosition = async (tradeId: number) => {
-    const result = await safeFetch(`${API_BASE}/api/close-position`, {
+  const closePosition = async (symbol: string) => {
+    const result = await safeFetch('/close-position', {
       method: 'POST',
-      body: JSON.stringify({ trade_id: tradeId }),
-      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, price: 0 }), // Backend will get current price
     });
     if (result) {
-      toast({ title: 'Position Closed', description: `Trade #${tradeId} closed successfully` });
+      toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
       fetchPaperTrades();
       fetchTradingStats();
     }
@@ -373,7 +373,7 @@ const PaperTrading: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => closePosition(trade.id)}
+                              onClick={() => closePosition(trade.symbol)}
                               className="text-red-400 border-red-400 hover:bg-red-400/10"
                             >
                               <Square className="w-4 h-4 mr-1" />

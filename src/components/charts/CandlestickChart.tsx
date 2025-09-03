@@ -4,11 +4,11 @@ import { useCandles } from '@/hooks/useCandles';
 
 interface CandlestickChartProps {
   symbol: string;
-  apiBase: string;
+  apiBase?: string; // Make optional
   height?: number;
 }
 
-const CandlestickChart: React.FC<CandlestickChartProps> = ({ symbol, apiBase, height = 280 }) => {
+const CandlestickChart: React.FC<CandlestickChartProps> = ({ symbol, apiBase = "https://tx-predictive-intelligence.onrender.com/api", height = 280 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);

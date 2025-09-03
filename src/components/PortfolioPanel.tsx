@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { safeFetch } from './TXDashboard';
-import { supabase } from '@/lib/supabaseClient'; // adjust import path if needed
+import { safeFetch } from '@/lib/api';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Position {
   symbol?: string;
@@ -27,6 +27,7 @@ interface PortfolioData {
 
 interface PortfolioPanelProps {
   onSelectSymbol?: (sym: string) => void;
+  apiBase?: string; // Allow apiBase prop but ignore it
 }
 
 const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
@@ -47,7 +48,7 @@ const PortfolioPanel: React.FC<PortfolioPanelProps> = ({ onSelectSymbol }) => {
     }
 
     // 🔹 Pass user_id as query param
-    const json = await safeFetch<any>(`/api/portfolio?user_id=${encodeURIComponent(userId)}`);
+    const json = await safeFetch<any>(`/portfolio?user_id=${encodeURIComponent(userId)}`);
 
     if (json) {
       let normalized: PortfolioData | null = null;

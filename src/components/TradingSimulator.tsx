@@ -42,7 +42,7 @@ interface TradingStats {
   balance: number;
 }
 
-const API_BASE = "/api";
+import { safeFetch } from '@/lib/api';
 
 const TradingSimulator: React.FC = () => {
   const [selectedSymbol, setSelectedSymbol] = useState('bitcoin');
@@ -84,9 +84,8 @@ const symbolsList = useMemo(() => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/scan`);
-        if (response.ok) {
-          const data = await response.json();
+        const data = await safeFetch<any>('/scan');
+        if (data) {
           setMarketData(data);
 
           // append current price to series for the selected symbol
@@ -113,9 +112,8 @@ const symbolsList = useMemo(() => {
   useEffect(() => {
     const fetchPositions = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/paper-trades`);
-        if (response.ok) {
-          const data = await response.json();
+        const data = await safeFetch<any>('/paper-trades');
+        if (data) {
           setPositions(data.paper_trades || []);
         }
       } catch (error) {
@@ -143,9 +141,8 @@ const executeTrade = async (side: 'BUY' | 'SELL') => {
       return;
     }
 
-    const response = await fetch(`${API_BASE}/api/paper-trades`, {
+    const res = await safeFetch<any>('/paper-trades', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         symbol: selectedSymbol,
         side: side.toLowerCase(),
@@ -156,16 +153,14 @@ const executeTrade = async (side: 'BUY' | 'SELL') => {
       }),
     });
 
-    const res = await response.json();
-    if (response.ok && res?.status === 'success') {
+    if (res?.status === 'success') {
       toast.success(`${side} order executed: ${quantity} ${selectedSymbol}`);
       setQuantity(1);
       setPrice('');
       // Refresh positions
       try {
-        const posRes = await fetch(`${API_BASE}/api/paper-trades`);
-        if (posRes.ok) {
-          const data = await posRes.json();
+        const data = await safeFetch<any>('/paper-trades');
+        if (data) {
           setPositions(data.paper_trades || []);
         }
       } catch {}
@@ -186,8 +181,7 @@ const closePosition = async (symbol: string) => {
     if (!currentPrice || currentPrice <= 0) {
       // attempt refresh
       try {
-        const r = await fetch(`${API_BASE}/api/scan`);
-        const d = await r.json();
+        const d = await safeFetch<any>('/scan');
         const found = d?.last_scan?.results?.find((x: any) => x.symbol === symbol);
         if (found?.price) currentPrice = parseFloat(String(found.price).replace(/[^0-9.-]+/g, ''));
       } catch {}
@@ -197,18 +191,15 @@ const closePosition = async (symbol: string) => {
       return;
     }
 
-    const response = await fetch(`${API_BASE}/api/close-position`, {
+    const res = await safeFetch<any>('/close-position', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ symbol, price: currentPrice }),
     });
 
-    const res = await response.json();
-    if (response.ok && res?.status === 'success') {
+    if (res?.status === 'success') {
       toast.success(`Position closed for ${symbol}`);
-      const posRes = await fetch(`${API_BASE}/api/paper-trades`);
-      if (posRes.ok) {
-        const data = await posRes.json();
+      const data = await safeFetch<any>('/paper-trades');
+      if (data) {
         setPositions(data.paper_trades || []);
       }
     } else {
@@ -256,7 +247,7 @@ const closePosition = async (symbol: string) => {
     <CardTitle className="text-tx-green text-lg font-semibold">{symbolsList.find(s=>s.value===selectedSymbol)?.label || selectedSymbol.toUpperCase()} — Real-Time</CardTitle>
   </CardHeader>
   <CardContent style={{ height: 280 }}>
-    <CandlestickChart symbol={selectedSymbol} apiBase={API_BASE} />
+    <CandlestickChart symbol={selectedSymbol} />
   </CardContent>
 </Card>
 
@@ -516,7 +507,7 @@ const closePosition = async (symbol: string) => {
             </CardContent>
           </Card>
 
-          <PortfolioPanel apiBase={API_BASE} onSelectSymbol={setSelectedSymbol} />
+          <PortfolioPanel onSelectSymbol={setSelectedSymbol} />
 
         </div>
       </div>

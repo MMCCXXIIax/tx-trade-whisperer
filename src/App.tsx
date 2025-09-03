@@ -5,6 +5,7 @@ import Welcome from '@/pages/Welcome'
 import TXDashboard from '@/components/TXDashboard'
 import NotFoundPage from '@/pages/NotFound'
 import AuthLoading from '@/pages/AuthLoading' // public route
+import { Toaster } from '@/components/ui/toaster'
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <Toaster />
     </Router>
   )
 }
