@@ -1,7 +1,25 @@
 // Centralized API configuration and utilities
 import { toast } from "@/hooks/use-toast";
 
-export const API_BASE = "https://tx-predictive-intelligence.onrender.com/api";
+// Environment-based API configuration for security
+const getApiBase = () => {
+  // Use environment variable if available, fallback to production URL
+  const envApiBase = import.meta.env.VITE_API_BASE;
+  const defaultApiBase = "https://tx-predictive-intelligence.onrender.com/api";
+  
+  // Validate URL format for security
+  const apiBase = envApiBase || defaultApiBase;
+  
+  try {
+    new URL(apiBase);
+    return apiBase;
+  } catch {
+    console.warn("Invalid API_BASE URL, using default");
+    return defaultApiBase;
+  }
+};
+
+export const API_BASE = getApiBase();
 
 export async function safeFetch<T>(
   path: string,

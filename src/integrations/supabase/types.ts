@@ -7,20 +7,310 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      app_state: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      detections: {
+        Row: {
+          confidence: number | null
+          id: string
+          outcome: string | null
+          pattern: string
+          price: number | null
+          symbol: string
+          timestamp: string
+          verified: boolean
+        }
+        Insert: {
+          confidence?: number | null
+          id?: string
+          outcome?: string | null
+          pattern: string
+          price?: number | null
+          symbol: string
+          timestamp?: string
+          verified?: boolean
+        }
+        Update: {
+          confidence?: number | null
+          id?: string
+          outcome?: string | null
+          pattern?: string
+          price?: number | null
+          symbol?: string
+          timestamp?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      error_logs: {
+        Row: {
+          created_at: string
+          id: number
+          message: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          message?: string | null
+          source: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          message?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
+      portfolio: {
+        Row: {
+          asset: string
+          avg_price: number | null
+          created_at: string
+          id: string
+          quantity: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset: string
+          avg_price?: number | null
+          created_at?: string
+          id?: string
+          quantity?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset?: string
+          avg_price?: number | null
+          created_at?: string
+          id?: string
+          quantity?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          is_public: boolean
+          mode: string | null
+          name: string | null
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          is_public?: boolean
+          mode?: string | null
+          name?: string | null
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_public?: boolean
+          mode?: string | null
+          name?: string | null
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      security_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_hash: string | null
+          record_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_hash?: string | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      visitors: {
+        Row: {
+          email: string | null
+          first_seen: string
+          id: string
+          ip: string | null
+          ip_hash: string | null
+          last_seen: string
+          mode: string | null
+          name: string | null
+          refresh_interval: number
+          user_agent: string | null
+          visit_count: number
+        }
+        Insert: {
+          email?: string | null
+          first_seen?: string
+          id: string
+          ip?: string | null
+          ip_hash?: string | null
+          last_seen?: string
+          mode?: string | null
+          name?: string | null
+          refresh_interval?: number
+          user_agent?: string | null
+          visit_count?: number
+        }
+        Update: {
+          email?: string | null
+          first_seen?: string
+          id?: string
+          ip?: string | null
+          ip_hash?: string | null
+          last_seen?: string
+          mode?: string | null
+          name?: string | null
+          refresh_interval?: number
+          user_agent?: string | null
+          visit_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitors_user_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          id: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          id?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          id?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      citext: {
+        Args: { "": boolean } | { "": string } | { "": unknown }
+        Returns: string
+      }
+      citext_hash: {
+        Args: { "": string }
+        Returns: number
+      }
+      citextin: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextout: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      citextrecv: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      citextsend: {
+        Args: { "": string }
+        Returns: string
+      }
+      cleanup_old_visitor_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      get_username_by_id: {
+        Args: { uid: string }
+        Returns: string
+      }
+      hash_ip: {
+        Args: { ip_address: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

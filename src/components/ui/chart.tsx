@@ -74,12 +74,10 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
+  // Create CSS content safely without dangerouslySetInnerHTML
+  const cssContent = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
@@ -88,14 +86,29 @@ ${colorConfig
       itemConfig.color
     return color ? `  --color-${key}: ${color};` : null
   })
+  .filter(Boolean)
   .join("\n")}
-}
-`
-          )
-          .join("\n"),
-      }}
-    />
-  )
+}`
+    )
+    .join("\n");
+
+  // Use React.useEffect to safely inject CSS
+  React.useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = cssContent;
+    styleElement.setAttribute('data-chart-id', id);
+    document.head.appendChild(styleElement);
+
+    return () => {
+      // Cleanup on unmount
+      const existingStyle = document.querySelector(`style[data-chart-id="${id}"]`);
+      if (existingStyle) {
+        document.head.removeChild(existingStyle);
+      }
+    };
+  }, [cssContent, id]);
+
+  return null;
 }
 
 const ChartTooltip = RechartsPrimitive.Tooltip

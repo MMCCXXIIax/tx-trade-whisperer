@@ -1,4 +1,21 @@
 // src/lib/saveProfile.ts
+import { safeFetch } from './api';
+
+// Input validation for security
+const validateProfilePayload = (payload: any): payload is {
+  id: string
+  name: string
+  email: string
+  mode: "demo" | "live"
+} => {
+  return (
+    payload &&
+    typeof payload.id === 'string' &&
+    typeof payload.name === 'string' &&
+    typeof payload.email === 'string' &&
+    (payload.mode === 'demo' || payload.mode === 'live')
+  );
+};
 
 export async function saveProfile(payload: {
   id: string
@@ -7,25 +24,36 @@ export async function saveProfile(payload: {
   mode: "demo" | "live"
 }) {
   try {
+    // Validate input for security
+    if (!validateProfilePayload(payload)) {
+      throw new Error("Invalid profile data provided");
+    }
+
+    // Sanitize inputs
+    const sanitizedPayload = {
+      id: payload.id.trim(),
+      name: payload.name.trim(),
+      email: payload.email.trim().toLowerCase(),
+      mode: payload.mode
+    };
+
     // Auto-generate a username if not provided
     const username =
-      payload.name?.trim() ||
-      payload.email?.split("@")[0] ||
-      `user_${payload.id.slice(0, 8)}`;
+      sanitizedPayload.name ||
+      sanitizedPayload.email.split("@")[0] ||
+      `user_${sanitizedPayload.id.slice(0, 8)}`;
 
-    const res = await fetch("/api/save-profile", {
+    // Use centralized API configuration
+    const data = await safeFetch<{ status: string; message?: string }>('/save-profile', {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        ...payload,
-        username // <-- now included
+        ...sanitizedPayload,
+        username
       }),
     });
 
-    const data = await res.json();
-
-    if (!res.ok || data.status !== "ok") {
-      throw new Error(data.message || "Save failed");
+    if (!data || data.status !== "ok") {
+      throw new Error(data?.message || "Save failed");
     }
 
     return { success: true };
