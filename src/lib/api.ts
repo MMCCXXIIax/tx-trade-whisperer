@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 const getApiBase = () => {
   // Use environment variable if available, fallback to production URL
   const envApiBase = import.meta.env.VITE_API_BASE;
-  const defaultApiBase = "https://tx-predictive-intelligence.onrender.com/api";
+  const defaultApiBase = "https://tx-predictive-intelligence.onrender.com";
   
   // Validate URL format for security
   const apiBase = envApiBase || defaultApiBase;
