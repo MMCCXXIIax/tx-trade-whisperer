@@ -67,13 +67,13 @@ const TXDashboardRich: React.FC = () => {
   ];
 
   const fetchScanData = async () => {
-    const data = await safeFetch<AppState>('/scan');
+    const data = await safeFetch<AppState>('/api/scan');
     setAppState(data);
     setIsLoading(false);
   };
 
   const checkForAlerts = async () => {
-    const data = await safeFetch<{ alerts: Alert[] }>('/get_active_alerts');
+    const data = await safeFetch<{ alerts: Alert[] }>('/api/get_active_alerts');
     if (data?.alerts?.length) {
       const newAlert = data.alerts[0];
       if (newAlert.symbol + newAlert.time !== lastAlertId) {
