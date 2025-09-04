@@ -11,23 +11,6 @@ interface AssetResult {
   pattern?: string;
   confidence?: string;
   price?: string;
-  message?: string
-
-
-
-import React, { useState, useEffect, useRef } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { safeFetch } from '@/lib/api';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Volume2, VolumeX, AlertTriangle, TrendingUp } from 'lucide-react';
-
-interface AssetResult {
-  symbol: string;
-  status: string;
-  pattern?: string;
-  confidence?: string;
-  price?: string;
   message?: string;
 }
 
