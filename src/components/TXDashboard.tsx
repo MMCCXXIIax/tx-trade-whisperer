@@ -81,7 +81,7 @@ const TXDashboard: React.FC = () => {
   // Fetch scan data
   const fetchScanData = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/scan`);
+      const response = await fetch(`${VITE_API_BASE}/api/scan`);
       if (response.ok) {
         const data = await response.json();
         setAppState(data);
@@ -96,7 +96,7 @@ const TXDashboard: React.FC = () => {
   // Check for active alerts
   const checkForAlerts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/get_active_alerts`);
+      const response = await fetch(`${VITE_API_BASE}/api/get_active_alerts`);
       if (response.ok) {
         const data = await response.json();
         if (data.alerts && data.alerts.length > 0 && !activeAlert) {
@@ -130,7 +130,7 @@ const TXDashboard: React.FC = () => {
     if (!activeAlert) return;
 
     try {
-      await fetch(`${API_BASE}/api/handle_alert_response`, {
+      await fetch(`${VITE_API_BASE}/api/handle_alert_response`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action })
@@ -160,12 +160,12 @@ const TXDashboard: React.FC = () => {
   const logOutcome = async (outcome: string) => {
     try {
       // Get latest detection ID
-      const detectionResponse = await fetch(`${API_BASE}/api/get_latest_detection_id`);
+      const detectionResponse = await fetch(`${VITE_API_BASE}/api/get_latest_detection_id`);
       if (detectionResponse.ok) {
         const detectionData = await detectionResponse.json();
         
         if (detectionData.detection_id) {
-          const response = await fetch(`${API_BASE}/api/log_outcome`, {
+          const response = await fetch(`${VITE_API_BASE}/api/log_outcome`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -453,7 +453,7 @@ const TXDashboard: React.FC = () => {
               <li>📈 Performance analytics & journaling</li>
             </ul>
             <div className="space-y-2">
-              <p className="font-bold text-primary">$24.99/month flat rate</p>
+              <p className="font-bold text-primary">$5/month flat rate</p>
               <p className="text-xs text-muted-foreground">No profit sharing, pure SaaS</p>
               <p className="text-sm">DM on IG @robert.manejk</p>
             </div>
