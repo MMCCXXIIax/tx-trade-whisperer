@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/hooks/use-toast"
 import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react"
-import { supabase } from "@/lib/supabaseClient"
+import { supabase } from "@/integrations/supabase/client"
 import { saveProfile } from "@/lib/saveProfile"
 
 type UserData = { name: string; email: string; mode: "demo" | "live" }

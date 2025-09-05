@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/AuthPage'
 import Welcome from '@/pages/Welcome'
-import TXDashboard from '@/components/TXDashboard'
+import TXDashboard from '@/components/TXDashboard';
 import NotFoundPage from '@/pages/NotFound'
 import AuthLoading from '@/pages/AuthLoading' // public route
 import { Toaster } from '@/components/ui/toaster'
@@ -24,7 +24,7 @@ export default function App() {
         <Route path="/tx-dashboard" element={<ProtectedRoute><TXDashboard /></ProtectedRoute>} />
 
         {/* Default */}
-        <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="/" element={<Navigate to="/tx-dashboard" replace />} />
 
         {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />
