@@ -44,7 +44,7 @@ export async function saveProfile(payload: {
       `user_${sanitizedPayload.id.slice(0, 8)}`;
 
     // Use centralized API configuration
-    const data = await safeFetch<{ status: string; message?: string }>('/save-profile', {
+    const data = await safeFetch<{ status: string; message?: string }>('/api/save-profile', {
       method: "POST",
       body: JSON.stringify({
         ...sanitizedPayload,

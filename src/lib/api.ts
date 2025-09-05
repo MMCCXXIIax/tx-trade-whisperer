@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 const getApiBase = () => {
   // Use environment variable if available, fallback to production URL
   const envApiBase = import.meta.env.VITE_API_BASE;
-  const defaultApiBase = "https://tx-predictive-intelligence.onrender.com/api";
+  const defaultApiBase = "https://tx-predictive-intelligence.onrender.com";
   
   // Validate URL format for security
   const apiBase = envApiBase || defaultApiBase;
@@ -26,9 +26,9 @@ export async function safeFetch<T>(
   options: RequestInit = {},
   retries = 2
 ): Promise<T | null> {
-  // Clean path - remove leading slash since API_BASE now includes /api
-  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  const url = `${API_BASE}/${cleanPath}`;
+  // Ensure path starts with /api/
+  const cleanPath = path.startsWith('/api/') ? path : `/api/${path.startsWith('/') ? path.slice(1) : path}`;
+  const url = `${API_BASE}${cleanPath}`;
   
   console.log(`Making API call to: ${url}`); // Debug log
   
