@@ -53,13 +53,13 @@ const PaperTrading: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchPaperTrades = async () => {
-    const json = await safeFetch<{ paper_trades: PaperTrade[] }>('/paper-trades');
+    const json = await safeFetch<{ paper_trades: PaperTrade[] }>('/api/paper-trades');
     if (json?.paper_trades) setPaperTrades(json.paper_trades);
     setIsLoading(false);
   };
 
   const fetchTradingStats = async () => {
-    const json = await safeFetch<TradingStats>('/get_trading_stats');
+    const json = await safeFetch<TradingStats>('/api/get_trading_stats');
     if (json) setTradingStats(json);
   };
 
@@ -69,7 +69,7 @@ const PaperTrading: React.FC = () => {
       return;
     }
     setIsTrading(true);
-    const result = await safeFetch('/paper-trades', {
+    const result = await safeFetch('/api/paper-trades', {
       method: 'POST',
       body: JSON.stringify({
         symbol: symbol.toUpperCase(),
@@ -93,7 +93,7 @@ const PaperTrading: React.FC = () => {
   };
 
   const closePosition = async (symbol: string) => {
-    const result = await safeFetch('/close-position', {
+    const result = await safeFetch('/api/close-position', {
       method: 'POST',
       body: JSON.stringify({ symbol, price: 0 }), // Backend will get current price
     });

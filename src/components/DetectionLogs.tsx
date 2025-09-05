@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Search, FileText, TrendingUp, Calendar, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { safeFetch, API_BASE } from '@/lib/api';
 
 interface Detection {
   id: number;
@@ -26,7 +27,7 @@ interface DetectionStats {
   recent_activity: number;
 }
 
-const API_BASE = "/api";
+
 
 const DetectionLogs: React.FC = () => {
   const [detections, setDetections] = useState<Detection[]>([]);
@@ -44,9 +45,8 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetections = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/get_detection_logs?days=${dateRange}`);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await safeFetch<{ detections: Detection[] }>(`/api/get_detection_logs?days=${dateRange}`);
+      if (data) {
         setDetections(data.detections || []);
       }
     } catch (error) {
@@ -58,9 +58,8 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetectionStats = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/get_detection_stats?days=${dateRange}`);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await safeFetch<DetectionStats>(`/api/get_detection_stats?days=${dateRange}`);
+      if (data) {
         setDetectionStats(data);
       }
     } catch (error) {

@@ -84,7 +84,7 @@ const symbolsList = useMemo(() => {
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const data = await safeFetch<any>('/scan');
+        const data = await safeFetch<any>('/api/scan');
         if (data) {
           setMarketData(data);
 
@@ -181,7 +181,7 @@ const closePosition = async (symbol: string) => {
     if (!currentPrice || currentPrice <= 0) {
       // attempt refresh
       try {
-        const d = await safeFetch<any>('/scan');
+        const d = await safeFetch<any>('/api/scan');
         const found = d?.last_scan?.results?.find((x: any) => x.symbol === symbol);
         if (found?.price) currentPrice = parseFloat(String(found.price).replace(/[^0-9.-]+/g, ''));
       } catch {}

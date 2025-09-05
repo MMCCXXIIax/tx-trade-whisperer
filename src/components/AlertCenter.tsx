@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, AlertTriangle, CheckCircle, Clock, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { safeFetch } from '@/lib/api';
 
 interface Alert {
   id?: number;
@@ -25,7 +26,7 @@ interface AlertStats {
   top_patterns: Array<{ pattern: string; count: number }>;
 }
 
-const API_BASE = "/api";
+
 
 const AlertCenter: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -41,9 +42,8 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlerts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/get_all_alerts`);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await safeFetch<{ alerts: Alert[] }>('/api/get_all_alerts');
+      if (data) {
         setAlerts(data.alerts || []);
       }
     } catch (error) {
@@ -55,9 +55,8 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlertStats = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/get_alert_stats`);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await safeFetch<AlertStats>('/api/get_alert_stats');
+      if (data) {
         setAlertStats(data);
       }
     } catch (error) {
