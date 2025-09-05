@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 const getApiBase = () => {
   // Use environment variable if available, fallback to production URL
   const envApiBase = import.meta.env.VITE_API_BASE;
-  const defaultApiBase = "https://tx-predictive-intelligence.onrender.com";
+  const defaultApiBase = "https://tx-predictive-intelligence.onrender.com/api";
   
   // Validate URL format for security
   const apiBase = envApiBase || defaultApiBase;
@@ -26,9 +26,11 @@ export async function safeFetch<T>(
   options: RequestInit = {},
   retries = 2
 ): Promise<T | null> {
-  // Ensure path starts with /
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  const url = `${API_BASE}${cleanPath}`;
+  // Clean path - remove leading slash since API_BASE now includes /api
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const url = `${API_BASE}/${cleanPath}`;
+  
+  console.log(`Making API call to: ${url}`); // Debug log
   
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
@@ -36,29 +38,37 @@ export async function safeFetch<T>(
         ...options,
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           ...options.headers,
         },
+        mode: 'cors', // Explicitly set CORS mode
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP Error ${response.status}: ${errorText}`);
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error(`API call failed (attempt ${attempt + 1}):`, error);
+      console.error(`API call failed (attempt ${attempt + 1}) to ${url}:`, error);
       
       if (attempt === retries) {
+        // Show more specific error message based on error type
+        const isNetworkError = error instanceof TypeError && error.message.includes('fetch');
         toast({
           title: "Connection Error",
-          description: "Unable to connect to server. Please try again.",
+          description: isNetworkError 
+            ? "Backend server appears to be down. Please check if your server is running."
+            : "Unable to connect to server. Please try again.",
           variant: "destructive"
         });
         return null;
       }
       
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      // Wait before retry with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
     }
   }
   
