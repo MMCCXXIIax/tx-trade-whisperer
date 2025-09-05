@@ -44,7 +44,7 @@ interface AppState {
   last_signal: LastSignal | null;
 }
 
-const API_BASE = process.env.NODE_ENV === 'production' 
+const VITE_API_BASE = process.env.NODE_ENV === 'production' 
   ? 'https://tx-predictive-intelligence.onrender.com' 
   : 'http://localhost:8080';
 
