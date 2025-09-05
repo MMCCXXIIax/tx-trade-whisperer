@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, TrendingUp, Volume2, VolumeX } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { safeFetch, API_BASE } from '@/lib/api';
 
 interface AssetResult {
   symbol: string;
@@ -44,9 +45,6 @@ interface AppState {
   last_signal: LastSignal | null;
 }
 
-const VITE_API_BASE = process.env.NODE_ENV === 'production' 
-  ? 'https://tx-predictive-intelligence.onrender.com' 
-  : 'http://localhost:8080';
 
 const TXDashboard: React.FC = () => {
   const [appState, setAppState] = useState<AppState | null>(null);
@@ -81,12 +79,11 @@ const TXDashboard: React.FC = () => {
   // Fetch scan data
   const fetchScanData = async () => {
     try {
-      const response = await fetch(`${VITE_API_BASE}/api/scan`);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await safeFetch<AppState>('/api/scan');
+      if (data) {
         setAppState(data);
-        setIsLoading(false);
       }
+      setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch scan data:', error);
       setIsLoading(false);
@@ -96,29 +93,26 @@ const TXDashboard: React.FC = () => {
   // Check for active alerts
   const checkForAlerts = async () => {
     try {
-      const response = await fetch(`${VITE_API_BASE}/api/get_active_alerts`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.alerts && data.alerts.length > 0 && !activeAlert) {
-          const newAlert = data.alerts[0];
-          setActiveAlert(newAlert);
-          
-          // Play alert sound
-          if (soundEnabled && alertAudioRef.current) {
-            alertAudioRef.current.play().catch(e => console.log('Audio play failed'));
-          }
-          
-          // Update TX personality
-          const randomPersonality = txPersonalities[Math.floor(Math.random() * txPersonalities.length)];
-          setTxPersonality(randomPersonality);
-          
-          // Show toast notification
-          toast({
-            title: "🚨 TX ALERT ACTIVATED",
-            description: `${newAlert.symbol}: ${newAlert.pattern} (${newAlert.confidence})`,
-            duration: 10000,
-          });
+      const data = await safeFetch<{alerts: Alert[]}>('/api/get_active_alerts');
+      if (data && data.alerts && data.alerts.length > 0 && !activeAlert) {
+        const newAlert = data.alerts[0];
+        setActiveAlert(newAlert);
+        
+        // Play alert sound
+        if (soundEnabled && alertAudioRef.current) {
+          alertAudioRef.current.play().catch(e => console.log('Audio play failed'));
         }
+        
+        // Update TX personality
+        const randomPersonality = txPersonalities[Math.floor(Math.random() * txPersonalities.length)];
+        setTxPersonality(randomPersonality);
+        
+        // Show toast notification
+        toast({
+          title: "🚨 TX ALERT ACTIVATED",
+          description: `${newAlert.symbol}: ${newAlert.pattern} (${newAlert.confidence})`,
+          duration: 10000,
+        });
       }
     } catch (error) {
       console.error('Failed to check alerts:', error);
@@ -130,9 +124,8 @@ const TXDashboard: React.FC = () => {
     if (!activeAlert) return;
 
     try {
-      await fetch(`${VITE_API_BASE}/api/handle_alert_response`, {
+      await safeFetch('/api/handle_alert_response', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action })
       });
 
@@ -160,26 +153,22 @@ const TXDashboard: React.FC = () => {
   const logOutcome = async (outcome: string) => {
     try {
       // Get latest detection ID
-      const detectionResponse = await fetch(`${VITE_API_BASE}/api/get_latest_detection_id`);
-      if (detectionResponse.ok) {
-        const detectionData = await detectionResponse.json();
+      const detectionData = await safeFetch<{detection_id: string}>('/api/get_latest_detection_id');
+      
+      if (detectionData && detectionData.detection_id) {
+        const result = await safeFetch('/api/log_outcome', {
+          method: 'POST',
+          body: JSON.stringify({
+            detection_id: detectionData.detection_id,
+            outcome: outcome
+          })
+        });
         
-        if (detectionData.detection_id) {
-          const response = await fetch(`${VITE_API_BASE}/api/log_outcome`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              detection_id: detectionData.detection_id,
-              outcome: outcome
-            })
+        if (result) {
+          toast({
+            title: "Outcome Logged",
+            description: "Thank you for the feedback!",
           });
-          
-          if (response.ok) {
-            toast({
-              title: "Outcome Logged",
-              description: "Thank you for the feedback!",
-            });
-          }
         }
       }
     } catch (error) {

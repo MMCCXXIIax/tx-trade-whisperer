@@ -24,7 +24,7 @@ export default function App() {
         <Route path="/tx-dashboard" element={<ProtectedRoute><TXDashboard /></ProtectedRoute>} />
 
         {/* Default */}
-        <Route path="/" element={<Navigate to="/auth" replace />} />
+        <Route path="/" element={<Navigate to="/tx-dashboard" replace />} />
 
         {/* Catch-all */}
         <Route path="*" element={<NotFoundPage />} />
