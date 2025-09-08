@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TX Color Palette in HSL */
+@layer base {
+  :root {
+    --tx-green: 152 100% 50%; /* #00ff88 */
+    --tx-black: 0 0% 7%;      /* #121212 */
+    --tx-gray: 0 0% 12%;      /* #1e1e1e */
+    --tx-red: 0 100% 67%;     /* #ff5555 */
+    --tx-blue: 210 100% 50%;  /* #0066ff */
+    --tx-orange: 36 100% 50%; /* #ff9900 */
+
+    /* Map Tailwind semantic tokens to TX palette */
+    --background: var(--tx-black);
+    --foreground: 0 0% 100%;
+    --primary: var(--tx-green);
+    --primary-foreground: var(--tx-black);
+    --secondary: var(--tx-gray);
+    --secondary-foreground: 0 0% 100%;
+    --accent: var(--tx-blue);
+    --accent-foreground: 0 0% 100%;
+    --destructive: var(--tx-red);
+    --destructive-foreground: 0 0% 100%;
+    --muted: 0 0% 40%;
+    --muted-foreground: 0 0% 67%;
+    --card: var(--tx-gray);
+    --card-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: var(--tx-green);
+  }
+
+  .dark {
+    --background: var(--tx-black);
+    --foreground: 0 0% 100%;
+    --card: var(--tx-gray);
+    --card-foreground: 0 0% 100%;
+    --popover: var(--tx-gray);
+    --popover-foreground: 0 0% 100%;
+    --primary: var(--tx-green);
+    --primary-foreground: var(--tx-black);
+    --secondary: var(--tx-gray);
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 40%;
+    --muted-foreground: 0 0% 67%;
+    --accent: var(--tx-blue);
+    --accent-foreground: 0 0% 100%;
+    --destructive: var(--tx-red);
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
+    --ring: var(--tx-green);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* Terminal container styling */
+.terminal-container {
+  background: hsl(var(--secondary));
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--tx-green)), transparent);
+  animation: terminal-scan 3s infinite;
+  z-index: 10;
+}
+
+/* Animations */
+@keyframes terminal-scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px hsl(var(--tx-green)), 0 0 10px hsl(var(--tx-green)), 0 0 15px hsl(var(--tx-green)); }
+  50% { box-shadow: 0 0 10px hsl(var(--tx-green)), 0 0 20px hsl(var(--tx-green)), 0 0 30px hsl(var(--tx-green)); }
+}
+
+.alert-glow {
+  animation: pulse-glow 2s infinite;
+  border: 2px solid hsl(var(--tx-red));
+}
+
+/* Status indicators */
+.status-active {
+  background: linear-gradient(45deg, hsl(var(--tx-green)), hsla(var(--tx-green) / 0.7));
+  background-size: 200% 200%;
+  animation: gradient-shift 2s ease infinite;
+}
+
+.pattern-detected {
+  @apply text-accent font-semibold px-2 py-1 rounded-md bg-accent/20 border border-accent/30;
+}
+
+.status-error {
+  @apply text-destructive font-semibold px-2 py-1 rounded-md bg-destructive/20 border border-destructive/30;
+}
+
+.status-idle {
+  @apply text-muted-foreground font-medium px-2 py-1 rounded-md bg-muted/20;
+}
+
+.price-display {
+  @apply font-mono text-primary font-semibold;
+}
+
+/* TX Button variants */
+.tx-button {
+  @apply transition-all duration-200 font-medium;
+}
+
+.tx-button-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 border-primary;
+}
+
+.tx-button-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 border-secondary;
+}
+
+.tx-button-accent {
+  @apply bg-accent text-accent-foreground hover:bg-accent/90 border-accent;
+}
+
+.tx-button-destructive {
+  @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

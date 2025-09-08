@@ -1,0 +1,2 @@
+# Remove the project_id to prevent secrets exposure
+# project_id = "your-project-id-here"
