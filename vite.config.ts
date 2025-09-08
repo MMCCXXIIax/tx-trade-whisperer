@@ -37,6 +37,10 @@ export default defineConfig(({ mode }) => ({
     port: 5000,
     strictPort: false,
   },
+  preview: {
+    host: "0.0.0.0",
+    port: 5000,
+  },
   plugins: [
     react,
     mode === "development" && componentTagger,
@@ -44,6 +48,19 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@radix-ui/react-tabs', '@radix-ui/react-dialog', '@radix-ui/react-select'],
+          charts: ['recharts', 'lightweight-charts'],
+        },
+      },
     },
   },
 }));
