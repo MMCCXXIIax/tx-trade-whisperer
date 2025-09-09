@@ -191,7 +191,7 @@ class TXApiClient {
     return this.request<AlertData[]>(`/alerts/recent?limit=${limit}`);
   }
 
-  async subscribeToAlerts(callback: (alert: AlertData) => void): WebSocket | null {
+  subscribeToAlerts(callback: (alert: AlertData) => void): WebSocket | null {
     try {
       const ws = new WebSocket(`ws://localhost:5000/ws`);
       ws.onmessage = (event) => {

@@ -32,10 +32,16 @@ class ApiClient {
     }
   }
 
-  // Auth methods
+// Auth methods
   async getSession() {
     return this.request<{ session: { user: { id: string } } | null }>('/auth/session', {
       method: 'POST'
+    });
+  }
+
+  async getUser() {
+    return this.request<{ user: { id: string; email?: string } | null }>('/auth/user', {
+      method: 'GET'
     });
   }
 
@@ -71,11 +77,13 @@ class AuthManager {
   onAuthStateChange(callback: (event: string, session: any) => void) {
     this.listeners.push(callback);
     return {
-      subscription: {
-        unsubscribe: () => {
-          const index = this.listeners.indexOf(callback);
-          if (index > -1) {
-            this.listeners.splice(index, 1);
+      data: {
+        subscription: {
+          unsubscribe: () => {
+            const index = this.listeners.indexOf(callback);
+            if (index > -1) {
+              this.listeners.splice(index, 1);
+            }
           }
         }
       }
@@ -84,6 +92,10 @@ class AuthManager {
 
   async getSession() {
     return apiClient.getSession();
+  }
+
+  async getUser() {
+    return apiClient.getUser();
   }
 }
 

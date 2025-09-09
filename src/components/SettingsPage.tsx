@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { testBackendConnection, testApiEndpoints } from '@/lib/healthCheck';
-import { User } from '@supabase/supabase-js';
+import { User } from '@/types/user';
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);

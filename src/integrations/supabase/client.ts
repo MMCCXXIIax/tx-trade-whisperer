@@ -6,7 +6,17 @@ export const supabase = {
   // Auth methods
   auth: {
     getSession: () => auth.getSession(),
-    onAuthStateChange: (callback: (event: string, session: any) => void) => auth.onAuthStateChange(callback)
+    getUser: () => auth.getUser(),
+    onAuthStateChange: (callback: (event: string, session: any) => void) => auth.onAuthStateChange(callback),
+    signInWithPassword: async (credentials: { email: string; password: string }) => {
+      return { data: null, error: null };
+    },
+    signUp: async (credentials: { email: string; password: string }) => {
+      return { data: null, error: null };
+    },
+    signOut: async () => {
+      return { error: null };
+    }
   },
   
   // Database methods - converted to API calls

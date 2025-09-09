@@ -34,12 +34,12 @@ if (process.env.NODE_ENV === "development") {
 export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
-    port: 5000,
+    port: 8080,
     strictPort: false,
   },
   preview: {
     host: "0.0.0.0",
-    port: 5000,
+    port: 8080,
   },
   plugins: [
     react,
