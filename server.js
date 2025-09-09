@@ -494,7 +494,7 @@ setInterval(() => {
   io.to('alerts').emit('pattern_alert', mockAlert);
 }, 30000);
 
-server.listen(port, 'localhost', () => {
+server.listen(port, '0.0.0.0', () => {
   console.log(`✅ TX Trading Server running on port ${port}`);
   console.log(`🔗 WebSocket available at ws://localhost:${port}`);
 });
