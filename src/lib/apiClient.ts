@@ -1,5 +1,5 @@
 // API client to replace Supabase functionality
-const API_BASE_URL = '/api';
+const API_BASE_URL = "https://tx-predictive-intelligence.onrender.com";
 
 interface ApiResponse<T> {
   data: T | null;
