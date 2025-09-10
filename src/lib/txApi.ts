@@ -87,22 +87,45 @@ interface Strategy {
 class TXApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-      // Use production API with fallback to mock data
-      const response = await safeFetch<{ data: T }>(endpoint, options);
+      // Use your deployed TX backend API
+      const fullUrl = `${TX_API_BASE}${endpoint}`;
       
-      if (response?.data) {
+      const response = await fetch(fullUrl, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...options.headers,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      // Handle different response formats from your backend
+      if (data.success !== undefined) {
         return {
-          data: response.data,
+          data: data.data || data,
+          success: data.success,
+          error: data.error
+        };
+      } else if (data.status === 'success') {
+        return {
+          data: data.data || data,
           success: true
         };
       } else {
-        // Fallback to mock data if API fails
-        console.log(`Falling back to mock data for ${endpoint}`);
-        return this.getMockData<T>(endpoint, options);
+        return {
+          data: data as T,
+          success: true
+        };
       }
     } catch (error) {
       console.error(`TX API Error [${endpoint}]:`, error);
-      // Return mock data as fallback
+      // Return mock data as fallback for development
       return this.getMockData<T>(endpoint, options);
     }
   }
