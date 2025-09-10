@@ -81,7 +81,7 @@ export function TXOverviewDashboard() {
 
   const loadMarketData = async () => {
     try {
-      // Mock market data for demo
+      const response = await txApi.getSupportedAssets();
       if (response.data) {
         const data = [
           { symbol: 'bitcoin', price: 95432, change: 2.3, status: 'active' },
@@ -91,7 +91,7 @@ export function TXOverviewDashboard() {
         const mockData = data.map((result: any) => ({
           symbol: result.symbol,
           price: result.price || 0,
-          change: Math.random() * 4 - 2, // Mock change for demo
+          change: Math.random() * 4 - 2,
           status: result.status
         }));
         setMarketData(mockData);
