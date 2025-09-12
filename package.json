@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm install @vitejs/plugin-react-swc @vitejs/plugin-react --no-save && vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "start": "node server.js",
@@ -93,6 +93,7 @@
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.2.1",
     "@vitejs/plugin-react-swc": "^4.0.1",
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",

@@ -1,6 +1,30 @@
 import { defineConfig, PluginOption } from "vite";
 import path from "path";
-import react from "@vitejs/plugin-react-swc";
+
+// Safely import React plugin
+let react: PluginOption | null = null;
+try {
+  react = require("@vitejs/plugin-react-swc").default;
+  console.log("✅ Successfully loaded @vitejs/plugin-react-swc");
+} catch (e) {
+  console.warn("⚠️ Failed to load @vitejs/plugin-react-swc, using fallback");
+  try {
+    // Try to load regular React plugin as fallback
+    react = require("@vitejs/plugin-react").default;
+    console.log("✅ Using fallback @vitejs/plugin-react");
+  } catch (e) {
+    console.error("❌ No React plugin available. Build may fail.");
+    // Create a minimal plugin to avoid errors
+    react = {
+      name: 'minimal-react-plugin',
+      transform(code, id) {
+        if (id.endsWith('.jsx') || id.endsWith('.tsx')) {
+          return { code, map: null };
+        }
+      }
+    };
+  }
+}
 
 // Dev‑only component tagger (optional)
 let componentTagger: PluginOption | undefined;
