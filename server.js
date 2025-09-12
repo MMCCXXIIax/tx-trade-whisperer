@@ -1,9 +1,5 @@
 // server.js
 import express from 'express';
-<<<<<<< HEAD
-import path from 'path';
-import { fileURLToPath } from 'url';
-=======
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -22,15 +18,11 @@ import { Server } from 'socket.io';
 //   securityAuditLog 
 // } from './shared/schema.js';
 // import { eq, desc } from 'drizzle-orm';
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-<<<<<<< HEAD
-const port = process.env.PORT || 10000;
-=======
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
@@ -38,7 +30,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors({
@@ -474,10 +466,6 @@ app.get('*', (_, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-<<<<<<< HEAD
-app.listen(port, () => {
-  console.log(`✅ Server running on port ${port}`);
-=======
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log('Client connected to WebSocket');
@@ -507,8 +495,15 @@ setInterval(() => {
   io.to('alerts').emit('pattern_alert', mockAlert);
 }, 30000);
 
+// Serve static files from the dist directory
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// For any other request, send the index.html file
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 server.listen(port, '0.0.0.0', () => {
   console.log(`✅ TX Trading Server running on port ${port}`);
   console.log(`🔗 WebSocket available at ws://localhost:${port}`);
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 });
