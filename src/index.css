@@ -111,8 +111,6 @@
   animation: gradient-shift 2s ease infinite;
 }
 
-<<<<<<< HEAD
-=======
 .pattern-detected {
   @apply text-accent font-semibold px-2 py-1 rounded-md bg-accent/20 border border-accent/30;
 }
@@ -149,8 +147,6 @@
 .tx-button-destructive {
   @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive;
 }
-
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
