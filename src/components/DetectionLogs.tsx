@@ -8,6 +8,7 @@ import { Search, FileText, TrendingUp, Calendar, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { safeFetch, API_BASE } from '@/lib/api';
 
+<<<<<<< HEAD
 // Helper function to calculate detection stats from detection data
 const calculateDetectionStats = (detections: Detection[]): DetectionStats => {
   const totalDetections = detections.length;
@@ -51,6 +52,8 @@ const calculateDetectionStats = (detections: Detection[]): DetectionStats => {
   };
 };
 
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 interface Detection {
   id: number;
   symbol: string;
@@ -88,6 +91,7 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetections = async () => {
     try {
+<<<<<<< HEAD
       const data = await safeFetch<{ detections: Detection[] }>(`/api/detection/logs?days=${dateRange}`);
       if (data) {
         if (data.detections) {
@@ -95,6 +99,11 @@ const DetectionLogs: React.FC = () => {
         } else if (Array.isArray(data)) {
           setDetections(data);
         }
+=======
+      const data = await safeFetch<{ detections: Detection[] }>(`/api/get_detection_logs?days=${dateRange}`);
+      if (data) {
+        setDetections(data.detections || []);
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       }
     } catch (error) {
       console.error('Failed to fetch detections:', error);
@@ -105,6 +114,7 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetectionStats = async () => {
     try {
+<<<<<<< HEAD
       const data = await safeFetch<DetectionStats>(`/api/detection/stats?days=${dateRange}`);
       if (data) {
         setDetectionStats(data);
@@ -118,12 +128,24 @@ const DetectionLogs: React.FC = () => {
       // Fallback to calculated stats
       const calculatedStats = calculateDetectionStats(detections);
       setDetectionStats(calculatedStats);
+=======
+      const data = await safeFetch<DetectionStats>(`/api/get_detection_stats?days=${dateRange}`);
+      if (data) {
+        setDetectionStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch detection stats:', error);
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
     }
   };
 
   const exportLogs = async () => {
     try {
+<<<<<<< HEAD
       const response = await fetch(`${API_BASE}/api/detection/export?days=${dateRange}`);
+=======
+      const response = await fetch(`${API_BASE}/api/export_detection_logs?days=${dateRange}`);
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -134,6 +156,7 @@ const DetectionLogs: React.FC = () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+<<<<<<< HEAD
       } else {
         // Fallback: export as JSON if CSV not available
         const dataStr = JSON.stringify(detections, null, 2);
@@ -146,6 +169,8 @@ const DetectionLogs: React.FC = () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       }
     } catch (error) {
       console.error('Failed to export logs:', error);

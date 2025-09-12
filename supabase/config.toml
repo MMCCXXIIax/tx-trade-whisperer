@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 project_id = "zqrelfdmdrwwxrfoclzp"
+=======
+# Remove the project_id to prevent secrets exposure
+# project_id = "your-project-id-here"
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5

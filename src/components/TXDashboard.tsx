@@ -1,10 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+<<<<<<< HEAD
 import { AlertTriangle, TrendingUp, Volume2, VolumeX, Loader2, Wifi, WifiOff, Play, Square } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { safeFetch, API_BASE } from '@/lib/api';
 import socketService from '@/lib/socket';
+=======
+import { AlertTriangle, TrendingUp, Volume2, VolumeX } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { safeFetch, API_BASE } from '@/lib/api';
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 
 interface AssetResult {
   symbol: string;
@@ -55,8 +61,11 @@ const TXDashboard: React.FC = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [txPersonality, setTxPersonality] = useState("Like that overprotective friend who won't let you make bad decisions... but for trading.");
+<<<<<<< HEAD
   const [socketConnected, setSocketConnected] = useState(false);
   const [scanningActive, setScanningActive] = useState(false);
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
   
   const alertAudioRef = useRef<HTMLAudioElement>(null);
   const refreshIntervalRef = useRef<NodeJS.Timeout>();
@@ -72,6 +81,7 @@ const TXDashboard: React.FC = () => {
     "While you were sleeping, I was working 😴→📈"
   ];
 
+<<<<<<< HEAD
   // Initialize Socket.IO connection and alert sound
   useEffect(() => {
     // Initialize alert sound
@@ -115,11 +125,19 @@ const TXDashboard: React.FC = () => {
       socketService.off('scan_update');
       socketService.off('market_update');
     };
+=======
+  // Initialize alert sound
+  useEffect(() => {
+    if (alertAudioRef.current) {
+      alertAudioRef.current.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAcBT2a2+/QfCsELYbR7/DPQAUF';
+    }
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
   }, []);
 
   // Fetch scan data
   const fetchScanData = async () => {
     try {
+<<<<<<< HEAD
       setIsLoading(true);
       const data = await safeFetch<AppState>('/api/scan');
       if (data) {
@@ -136,6 +154,18 @@ const TXDashboard: React.FC = () => {
         variant: "destructive"
       });
     } finally {
+=======
+      const data = await safeFetch<AppState>('/scan');
+      if (data) {
+        setAppState(data);
+        console.log('✅ Scan data fetched successfully:', data);
+      } else {
+        console.warn('⚠️ No scan data received from backend');
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('❌ Failed to fetch scan data:', error);
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       setIsLoading(false);
     }
   };
@@ -143,15 +173,39 @@ const TXDashboard: React.FC = () => {
   // Check for active alerts
   const checkForAlerts = async () => {
     try {
+<<<<<<< HEAD
       const data = await safeFetch<{alerts: Alert[]}>('/api/get_active_alerts');
       if (data && data.alerts && data.alerts.length > 0 && !activeAlert) {
         processNewAlert(data.alerts[0]);
+=======
+      const data = await safeFetch<{alerts: Alert[]}>('/get_active_alerts');
+      if (data && data.alerts && data.alerts.length > 0 && !activeAlert) {
+        const newAlert = data.alerts[0];
+        setActiveAlert(newAlert);
+        
+        // Play alert sound
+        if (soundEnabled && alertAudioRef.current) {
+          alertAudioRef.current.play().catch(e => console.log('Audio play failed'));
+        }
+        
+        // Update TX personality
+        const randomPersonality = txPersonalities[Math.floor(Math.random() * txPersonalities.length)];
+        setTxPersonality(randomPersonality);
+        
+        // Show toast notification
+        toast({
+          title: "🚨 TX ALERT ACTIVATED",
+          description: `${newAlert.symbol}: ${newAlert.pattern} (${newAlert.confidence})`,
+          duration: 10000,
+        });
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       }
     } catch (error) {
       console.error('Failed to check alerts:', error);
     }
   };
 
+<<<<<<< HEAD
   // Process new alert (used by both polling and Socket.IO)
   const processNewAlert = (newAlert: Alert) => {
     if (activeAlert) return; // Don't override existing alert
@@ -175,11 +229,14 @@ const TXDashboard: React.FC = () => {
     });
   };
 
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
   // Handle alert response
   const handleAlert = async (action: string) => {
     if (!activeAlert) return;
 
     try {
+<<<<<<< HEAD
       // Build payload with alert details and action
       const payload = {
         alert_id: activeAlert.id || 0,
@@ -191,6 +248,11 @@ const TXDashboard: React.FC = () => {
       await safeFetch('/api/handle_alert_response', {
         method: 'POST',
         body: JSON.stringify(payload)
+=======
+      await safeFetch('/api/handle_alert_response', {
+        method: 'POST',
+        body: JSON.stringify({ action })
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       });
 
       // Update TX personality based on action
@@ -210,11 +272,14 @@ const TXDashboard: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to handle alert:', error);
+<<<<<<< HEAD
       toast({
         title: "Error",
         description: "Failed to process alert response. Please try again.",
         variant: "destructive"
       });
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
     }
   };
 
@@ -239,6 +304,7 @@ const TXDashboard: React.FC = () => {
             description: "Thank you for the feedback!",
           });
         }
+<<<<<<< HEAD
       } else {
         // If no detection ID is available, send outcome with placeholder
         const result = await safeFetch('/api/log_outcome', {
@@ -255,6 +321,8 @@ const TXDashboard: React.FC = () => {
             description: "Thank you for the feedback!",
           });
         }
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       }
     } catch (error) {
       console.error('Failed to log outcome:', error);
@@ -266,6 +334,7 @@ const TXDashboard: React.FC = () => {
     }
   };
 
+<<<<<<< HEAD
   // Live scanning controls
   const startScanning = async () => {
     try {
@@ -318,6 +387,8 @@ const TXDashboard: React.FC = () => {
     }
   };
 
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
   // Countdown timer
   useEffect(() => {
     countdownIntervalRef.current = setInterval(() => {
@@ -340,6 +411,7 @@ const TXDashboard: React.FC = () => {
   // Initial data fetch and periodic updates
   useEffect(() => {
     fetchScanData();
+<<<<<<< HEAD
     checkScanStatus();
     
     // Reduced polling interval since we have Socket.IO for real-time updates
@@ -350,13 +422,23 @@ const TXDashboard: React.FC = () => {
       }
       checkScanStatus();
     }, 15000);
+=======
+    
+    refreshIntervalRef.current = setInterval(() => {
+      checkForAlerts();
+    }, 10000);
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
     };
+<<<<<<< HEAD
   }, [socketConnected]);
+=======
+  }, []);
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 
   const getAssetStatusDisplay = (result: AssetResult) => {
     switch (result.status) {
@@ -373,6 +455,7 @@ const TXDashboard: React.FC = () => {
     }
   };
 
+<<<<<<< HEAD
   if (isLoading && !appState) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -383,6 +466,14 @@ const TXDashboard: React.FC = () => {
           </div>
           <div className="text-muted-foreground mt-2 text-center">Initializing trading intelligence...</div>
           <div className="text-xs text-muted-foreground mt-4 text-center">Connecting to: {API_BASE}</div>
+=======
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="terminal-container p-8">
+          <div className="text-primary text-xl font-bold">TX LOADING...</div>
+          <div className="text-muted-foreground mt-2">Initializing trading intelligence...</div>
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
         </div>
       </div>
     );
@@ -406,6 +497,7 @@ const TXDashboard: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-4">
+<<<<<<< HEAD
                 {/* Socket.IO Connection Status */}
                 <div className="flex items-center gap-2">
                   {socketConnected ? (
@@ -443,6 +535,8 @@ const TXDashboard: React.FC = () => {
                   )}
                 </div>
 
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
                 <Button
                   variant="ghost"
                   size="icon"
@@ -452,9 +546,13 @@ const TXDashboard: React.FC = () => {
                   {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                 </Button>
                 <div className="text-right">
+<<<<<<< HEAD
                   <div className="text-primary font-bold">
                     ⚡ {userCount} traders • {scanningActive ? 'Scanning' : 'Idle'}
                   </div>
+=======
+                  <div className="text-primary font-bold">⚡ {userCount} traders live</div>
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
                   <div className="text-muted-foreground text-sm">
                     Next scan: {countdown}s
                   </div>
@@ -510,7 +608,11 @@ const TXDashboard: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleAlert('SNOOZE')}
+<<<<<<< HEAD
                     className="tx-button border-orange-500 text-orange-500"
+=======
+                    className="tx-button border-tx-orange text-tx-orange hover:bg-tx-orange/20"
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
                   >
                     ⏰ Snooze 5m
                   </Button>

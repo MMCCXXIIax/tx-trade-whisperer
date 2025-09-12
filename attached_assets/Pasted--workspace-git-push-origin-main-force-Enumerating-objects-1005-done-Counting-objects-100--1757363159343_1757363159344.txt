@@ -1,0 +1,69 @@
+~/workspace$ git push origin main --force
+Enumerating objects: 1005, done.
+Counting objects: 100% (1003/1003), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (384/384), done.
+Writing objects: 100% (964/964), 2.35 MiB | 12.33 MiB/s, done.
+Total 964 (delta 591), reused 920 (delta 568), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (591/591), completed with 19 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:      (?) This repository does not have Secret Scanning enabled, but is eligible. Enable Secret Scanning to view and manage detected secrets.
+remote:      Visit the repository settings page, https://github.com/MMCCXXIIax/tx-trade-whisperer/settings/security_analysis
+remote:     
+remote:     
+remote:       —— GitHub Personal Access Token ——————————————————————
+remote:        locations:
+remote:          - commit: 7b3089c0f1f027c2d10628e9fccd5129533d6bf0
+remote:            path: main.py:8
+remote:          - commit: 3b4617fb2c985bf3eaee9278d171d8cf5a21f0c8
+remote:            path: main.py:22
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/MMCCXXIIax/tx-trade-whisperer/security/secret-scanning/unblock-secret/32QVXsslkDtebjNSh7hcBFUTkAH
+remote:     
+remote:     
+remote:       —— GitHub Personal Access Token ——————————————————————
+remote:        locations:
+remote:          - commit: 219a463d07b8189fbc47ea60ca5cdd6d4fea2c7d
+remote:            path: .env:16
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/MMCCXXIIax/tx-trade-whisperer/security/secret-scanning/unblock-secret/32QVXrHsNtDmQoEbF5rs1ltWCQg
+remote:     
+remote:     
+remote:       —— GitHub Personal Access Token ——————————————————————
+remote:        locations:
+remote:          - commit: 5d65c8e0efec0334654ad1156f87f2a6f58a6643
+remote:            path: main.py:616
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/MMCCXXIIax/tx-trade-whisperer/security/secret-scanning/unblock-secret/32QVXtNAljqe5wb9CcHGPopELot
+remote:     
+remote:     
+remote:       —— GitHub Personal Access Token ——————————————————————
+remote:        locations:
+remote:          - commit: d02bf23a9f04bdceaba7ab669dbe980ceed67acb
+remote:            path: main.py:983
+remote:          - commit: 5ad74d412f23d7165925de9fe6da22f212e7cd00
+remote:            path: main.py:983
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/MMCCXXIIax/tx-trade-whisperer/security/secret-scanning/unblock-secret/32QVXr2whyiCUI0SOENmstLI3Wv
+remote:     
+remote: 
+remote: 
+To https://github.com/MMCCXXIIax/tx-trade-whisperer.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/MMCCXXIIax/tx-trade-whisperer.git'
+~/workspace$ 

@@ -111,6 +111,46 @@
   animation: gradient-shift 2s ease infinite;
 }
 
+<<<<<<< HEAD
+=======
+.pattern-detected {
+  @apply text-accent font-semibold px-2 py-1 rounded-md bg-accent/20 border border-accent/30;
+}
+
+.status-error {
+  @apply text-destructive font-semibold px-2 py-1 rounded-md bg-destructive/20 border border-destructive/30;
+}
+
+.status-idle {
+  @apply text-muted-foreground font-medium px-2 py-1 rounded-md bg-muted/20;
+}
+
+.price-display {
+  @apply font-mono text-primary font-semibold;
+}
+
+/* TX Button variants */
+.tx-button {
+  @apply transition-all duration-200 font-medium;
+}
+
+.tx-button-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 border-primary;
+}
+
+.tx-button-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 border-secondary;
+}
+
+.tx-button-accent {
+  @apply bg-accent text-accent-foreground hover:bg-accent/90 border-accent;
+}
+
+.tx-button-destructive {
+  @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 border-destructive;
+}
+
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }

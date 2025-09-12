@@ -36,6 +36,7 @@ interface TradingStats {
   avg_trade: number;
 }
 
+<<<<<<< HEAD
 // Helper function to calculate stats from trades when backend doesn't provide them
 const calculateStatsFromTrades = (trades: PaperTrade[]): TradingStats => {
   const closedTrades = trades.filter(t => t.status === 'closed');
@@ -61,6 +62,8 @@ const calculateStatsFromTrades = (trades: PaperTrade[]): TradingStats => {
   };
 };
 
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 // Use centralized API utilities
 
 const PaperTrading: React.FC = () => {
@@ -78,6 +81,7 @@ const PaperTrading: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchPaperTrades = async () => {
+<<<<<<< HEAD
     try {
       const json = await safeFetch<{ paper_trades: PaperTrade[]; positions: PaperTrade[] }>('/api/paper/portfolio');
       if (json?.paper_trades) {
@@ -121,6 +125,16 @@ const PaperTrading: React.FC = () => {
       const stats = calculateStatsFromTrades(paperTrades);
       setTradingStats(stats);
     }
+=======
+    const json = await safeFetch<{ paper_trades: PaperTrade[] }>('/api/paper-trades');
+    if (json?.paper_trades) setPaperTrades(json.paper_trades);
+    setIsLoading(false);
+  };
+
+  const fetchTradingStats = async () => {
+    const json = await safeFetch<TradingStats>('/api/get_trading_stats');
+    if (json) setTradingStats(json);
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
   };
 
   const placePaperTrade = async () => {
@@ -129,12 +143,20 @@ const PaperTrading: React.FC = () => {
       return;
     }
     setIsTrading(true);
+<<<<<<< HEAD
     const result = await safeFetch('/api/paper/trade', {
+=======
+    const result = await safeFetch('/api/paper-trades', {
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       method: 'POST',
       body: JSON.stringify({
         symbol: symbol.toUpperCase(),
         side: action.toLowerCase(),
+<<<<<<< HEAD
         quantity: parseFloat(quantity),
+=======
+        qty: parseFloat(quantity),
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
         price: parseFloat(price),
         pattern: 'Manual',
         confidence: 1.0,
@@ -148,13 +170,17 @@ const PaperTrading: React.FC = () => {
       setAction('BUY');
       fetchPaperTrades();
       fetchTradingStats();
+<<<<<<< HEAD
     } else {
       toast({ title: 'Trade Failed', description: 'Unable to place paper trade. Please try again.', variant: 'destructive' });
+=======
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
     }
     setIsTrading(false);
   };
 
   const closePosition = async (symbol: string) => {
+<<<<<<< HEAD
     try {
       // Find the trade to close
       const trade = paperTrades.find(t => t.symbol === symbol && t.status === 'open');
@@ -177,6 +203,16 @@ const PaperTrading: React.FC = () => {
     } catch (error) {
       console.error('Failed to close position:', error);
       toast({ title: 'Close Failed', description: `Error closing ${symbol} position.`, variant: 'destructive' });
+=======
+    const result = await safeFetch('/api/close-position', {
+      method: 'POST',
+      body: JSON.stringify({ symbol, price: 0 }), // Backend will get current price
+    });
+    if (result) {
+      toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
+      fetchPaperTrades();
+      fetchTradingStats();
+>>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
     }
   };
 
