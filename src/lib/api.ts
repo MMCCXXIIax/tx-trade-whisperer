@@ -26,22 +26,18 @@ export async function safeFetch<T>(
   options: RequestInit = {},
   retries = 2
 ): Promise<T | null> {
-<<<<<<< HEAD
   // Handle paths that already start with /api/ or add /api/ prefix
+  // Also handle special endpoints like /health
   let cleanPath: string;
   if (path.startsWith('/api/')) {
     cleanPath = path;
+  } else if (path.startsWith('/health')) {
+    cleanPath = path; // Health check endpoint
   } else if (path.startsWith('/')) {
     cleanPath = `/api${path}`;
   } else {
     cleanPath = `/api/${path}`;
   }
-=======
-  // Ensure path starts with /api/ unless it's a special endpoint
-  const cleanPath = path.startsWith('/api/') ? path : 
-                   path.startsWith('/health') ? path :
-                   `/api/${path.startsWith('/') ? path.slice(1) : path}`;
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
   const url = `${API_BASE}${cleanPath}`;
   
   console.log(`Making API call to: ${url}`); // Debug log
@@ -51,20 +47,12 @@ export async function safeFetch<T>(
       const response = await fetch(url, {
         ...options,
         headers: {
-<<<<<<< HEAD
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           ...options.headers,
         },
         mode: 'cors', // Explicitly set CORS mode
-=======
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        mode: 'cors',
         credentials: 'omit', // Don't send cookies for API calls
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       });
 
       if (!response.ok) {
