@@ -30,7 +30,7 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
-const port = process.env.PORT || 10000;
+const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
