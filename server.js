@@ -456,7 +456,6 @@ app.get('/api/scan/status', async (req, res) => {
     res.status(500).json({ data: null, error: 'Failed to fetch scan status' });
   }
 });
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 
 // Serve static files from the dist folder
 app.use(express.static(path.join(__dirname, 'dist')));
