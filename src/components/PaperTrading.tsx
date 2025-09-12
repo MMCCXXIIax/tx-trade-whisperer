@@ -36,6 +36,31 @@ interface TradingStats {
   avg_trade: number;
 }
 
+// Helper function to calculate stats from trades when backend doesn't provide them
+const calculateStatsFromTrades = (trades: PaperTrade[]): TradingStats => {
+  const closedTrades = trades.filter(t => t.status === 'closed');
+  const openPositions = trades.filter(t => t.status === 'open').length;
+  
+  const winningTrades = closedTrades.filter(t => (t.pnl || 0) > 0);
+  const winRate = closedTrades.length > 0 ? (winningTrades.length / closedTrades.length) * 100 : 0;
+  
+  const totalPnl = closedTrades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+  const bestTrade = closedTrades.length > 0 ? Math.max(...closedTrades.map(t => t.pnl || 0)) : 0;
+  const worstTrade = closedTrades.length > 0 ? Math.min(...closedTrades.map(t => t.pnl || 0)) : 0;
+  const avgTrade = closedTrades.length > 0 ? totalPnl / closedTrades.length : 0;
+  
+  return {
+    total_balance: 100000 + totalPnl, // Start with 100k virtual balance
+    total_pnl: totalPnl,
+    win_rate: Math.round(winRate),
+    total_trades: trades.length,
+    open_positions: openPositions,
+    best_trade: bestTrade,
+    worst_trade: worstTrade,
+    avg_trade: avgTrade
+  };
+};
+
 // Use centralized API utilities
 
 const PaperTrading: React.FC = () => {
@@ -53,14 +78,49 @@ const PaperTrading: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchPaperTrades = async () => {
-    const json = await safeFetch<{ paper_trades: PaperTrade[] }>('/api/paper-trades');
-    if (json?.paper_trades) setPaperTrades(json.paper_trades);
-    setIsLoading(false);
+    try {
+      const json = await safeFetch<{ paper_trades: PaperTrade[]; positions: PaperTrade[] }>('/api/paper/portfolio');
+      if (json?.paper_trades) {
+        setPaperTrades(json.paper_trades);
+      } else if (json?.positions) {
+        setPaperTrades(json.positions);
+      } else if (Array.isArray(json)) {
+        // Handle direct array response
+        setPaperTrades(json);
+      }
+    } catch (error) {
+      console.error('Failed to fetch paper trades:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const fetchTradingStats = async () => {
-    const json = await safeFetch<TradingStats>('/api/get_trading_stats');
-    if (json) setTradingStats(json);
+    try {
+      const json = await safeFetch<TradingStats>('/api/paper/portfolio');
+      if (json && json.total_balance !== undefined) {
+        // Backend returned portfolio with stats
+        setTradingStats({
+          total_balance: json.total_balance || 100000,
+          total_pnl: json.total_pnl || 0,
+          win_rate: json.win_rate || 0,
+          total_trades: json.total_trades || paperTrades.length,
+          open_positions: json.open_positions || paperTrades.filter(t => t.status === 'open').length,
+          best_trade: json.best_trade || 0,
+          worst_trade: json.worst_trade || 0,
+          avg_trade: json.avg_trade || 0
+        });
+      } else {
+        // If no stats in portfolio response, calculate from trades
+        const stats = calculateStatsFromTrades(paperTrades);
+        setTradingStats(stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch trading stats:', error);
+      // Fallback to calculated stats
+      const stats = calculateStatsFromTrades(paperTrades);
+      setTradingStats(stats);
+    }
   };
 
   const placePaperTrade = async () => {
@@ -69,12 +129,12 @@ const PaperTrading: React.FC = () => {
       return;
     }
     setIsTrading(true);
-    const result = await safeFetch('/api/paper-trades', {
+    const result = await safeFetch('/api/paper/trade', {
       method: 'POST',
       body: JSON.stringify({
         symbol: symbol.toUpperCase(),
         side: action.toLowerCase(),
-        qty: parseFloat(quantity),
+        quantity: parseFloat(quantity),
         price: parseFloat(price),
         pattern: 'Manual',
         confidence: 1.0,
@@ -88,19 +148,35 @@ const PaperTrading: React.FC = () => {
       setAction('BUY');
       fetchPaperTrades();
       fetchTradingStats();
+    } else {
+      toast({ title: 'Trade Failed', description: 'Unable to place paper trade. Please try again.', variant: 'destructive' });
     }
     setIsTrading(false);
   };
 
   const closePosition = async (symbol: string) => {
-    const result = await safeFetch('/api/close-position', {
-      method: 'POST',
-      body: JSON.stringify({ symbol, price: 0 }), // Backend will get current price
-    });
-    if (result) {
-      toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
-      fetchPaperTrades();
-      fetchTradingStats();
+    try {
+      // Find the trade to close
+      const trade = paperTrades.find(t => t.symbol === symbol && t.status === 'open');
+      if (!trade || !trade.id) {
+        toast({ title: 'Error', description: 'Trade not found or missing ID', variant: 'destructive' });
+        return;
+      }
+
+      const result = await safeFetch(`/api/paper/trade/${trade.id}/close`, {
+        method: 'POST',
+        body: JSON.stringify({ price: 0 }), // Backend will get current price
+      });
+      if (result) {
+        toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
+        fetchPaperTrades();
+        fetchTradingStats();
+      } else {
+        toast({ title: 'Close Failed', description: `Unable to close ${symbol} position. Please try again.`, variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Failed to close position:', error);
+      toast({ title: 'Close Failed', description: `Error closing ${symbol} position.`, variant: 'destructive' });
     }
   };
 

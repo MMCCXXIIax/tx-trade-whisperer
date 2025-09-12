@@ -68,9 +68,9 @@ export function useCandles({ apiBase, symbol, interval = '1m', limit = 200, poll
   const [error, setError] = useState<string | null>(null);
 
   const url = useMemo(() => {
-    const params = new URLSearchParams({ symbol });
+    const params = new URLSearchParams({ symbol, interval, limit: limit.toString() });
     return `${apiBase}/api/candles?${params.toString()}`;
-  }, [apiBase, symbol]);
+  }, [apiBase, symbol, interval, limit]);
 
   useEffect(() => {
     let active = true;

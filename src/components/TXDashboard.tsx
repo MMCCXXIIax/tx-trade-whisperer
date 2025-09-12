@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, TrendingUp, Volume2, VolumeX } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Volume2, VolumeX, Loader2, Wifi, WifiOff, Play, Square } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { safeFetch, API_BASE } from '@/lib/api';
+import socketService from '@/lib/socket';
 
 interface AssetResult {
   symbol: string;
@@ -54,6 +55,8 @@ const TXDashboard: React.FC = () => {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [txPersonality, setTxPersonality] = useState("Like that overprotective friend who won't let you make bad decisions... but for trading.");
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [scanningActive, setScanningActive] = useState(false);
   
   const alertAudioRef = useRef<HTMLAudioElement>(null);
   const refreshIntervalRef = useRef<NodeJS.Timeout>();
@@ -69,23 +72,70 @@ const TXDashboard: React.FC = () => {
     "While you were sleeping, I was working 😴→📈"
   ];
 
-  // Initialize alert sound
+  // Initialize Socket.IO connection and alert sound
   useEffect(() => {
+    // Initialize alert sound
     if (alertAudioRef.current) {
-      alertAudioRef.current.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAcBT2a2+/QfCsELYbR7/DPQAUF';
+      alertAudioRef.current.src = '/alert.mp3'; // Use the audio file from public directory
     }
+
+    // Connect to Socket.IO
+    const socket = socketService.connect();
+    
+    // Set up socket event listeners
+    socketService.onNewAlert((alert: Alert) => {
+      console.log('🚨 New alert received via Socket.IO:', alert);
+      processNewAlert(alert);
+    });
+
+    socketService.onScanUpdate((scan: any) => {
+      console.log('📊 Scan update received via Socket.IO:', scan);
+      setAppState(scan);
+    });
+
+    socketService.onMarketUpdate((data: any) => {
+      console.log('💹 Market update received via Socket.IO:', data);
+      // Update market data in app state
+      if (data && appState) {
+        setAppState(prev => prev ? { ...prev, market_data: data } : prev);
+      }
+    });
+
+    // Monitor socket connection status
+    const checkSocketStatus = () => {
+      setSocketConnected(socketService.isConnected());
+    };
+
+    const statusInterval = setInterval(checkSocketStatus, 1000);
+    checkSocketStatus(); // Initial check
+
+    return () => {
+      clearInterval(statusInterval);
+      socketService.off('new_alert');
+      socketService.off('scan_update');
+      socketService.off('market_update');
+    };
   }, []);
 
   // Fetch scan data
   const fetchScanData = async () => {
     try {
+      setIsLoading(true);
       const data = await safeFetch<AppState>('/api/scan');
       if (data) {
+        console.log('Scan data received:', data);
         setAppState(data);
+      } else {
+        console.warn('No scan data received from backend');
       }
-      setIsLoading(false);
     } catch (error) {
       console.error('Failed to fetch scan data:', error);
+      toast({
+        title: "Connection Error",
+        description: "Unable to fetch market data. Backend may be starting up or experiencing issues.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -95,28 +145,34 @@ const TXDashboard: React.FC = () => {
     try {
       const data = await safeFetch<{alerts: Alert[]}>('/api/get_active_alerts');
       if (data && data.alerts && data.alerts.length > 0 && !activeAlert) {
-        const newAlert = data.alerts[0];
-        setActiveAlert(newAlert);
-        
-        // Play alert sound
-        if (soundEnabled && alertAudioRef.current) {
-          alertAudioRef.current.play().catch(e => console.log('Audio play failed'));
-        }
-        
-        // Update TX personality
-        const randomPersonality = txPersonalities[Math.floor(Math.random() * txPersonalities.length)];
-        setTxPersonality(randomPersonality);
-        
-        // Show toast notification
-        toast({
-          title: "🚨 TX ALERT ACTIVATED",
-          description: `${newAlert.symbol}: ${newAlert.pattern} (${newAlert.confidence})`,
-          duration: 10000,
-        });
+        processNewAlert(data.alerts[0]);
       }
     } catch (error) {
       console.error('Failed to check alerts:', error);
     }
+  };
+
+  // Process new alert (used by both polling and Socket.IO)
+  const processNewAlert = (newAlert: Alert) => {
+    if (activeAlert) return; // Don't override existing alert
+    
+    setActiveAlert(newAlert);
+    
+    // Play alert sound
+    if (soundEnabled && alertAudioRef.current) {
+      alertAudioRef.current.play().catch(e => console.log('Audio play failed'));
+    }
+    
+    // Update TX personality
+    const randomPersonality = txPersonalities[Math.floor(Math.random() * txPersonalities.length)];
+    setTxPersonality(randomPersonality);
+    
+    // Show toast notification
+    toast({
+      title: "🚨 TX ALERT ACTIVATED",
+      description: `${newAlert.symbol}: ${newAlert.pattern} (${newAlert.confidence})`,
+      duration: 10000,
+    });
   };
 
   // Handle alert response
@@ -124,9 +180,17 @@ const TXDashboard: React.FC = () => {
     if (!activeAlert) return;
 
     try {
+      // Build payload with alert details and action
+      const payload = {
+        alert_id: activeAlert.id || 0,
+        symbol: activeAlert.symbol,
+        pattern: activeAlert.pattern,
+        action: action
+      };
+
       await safeFetch('/api/handle_alert_response', {
         method: 'POST',
-        body: JSON.stringify({ action })
+        body: JSON.stringify(payload)
       });
 
       // Update TX personality based on action
@@ -146,6 +210,11 @@ const TXDashboard: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to handle alert:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process alert response. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -170,6 +239,22 @@ const TXDashboard: React.FC = () => {
             description: "Thank you for the feedback!",
           });
         }
+      } else {
+        // If no detection ID is available, send outcome with placeholder
+        const result = await safeFetch('/api/log_outcome', {
+          method: 'POST',
+          body: JSON.stringify({
+            detection_id: 'latest', // Special value that backend can interpret
+            outcome: outcome
+          })
+        });
+        
+        if (result) {
+          toast({
+            title: "Outcome Logged",
+            description: "Thank you for the feedback!",
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to log outcome:', error);
@@ -178,6 +263,58 @@ const TXDashboard: React.FC = () => {
         description: "No recent detection to log outcome for.",
         variant: "destructive",
       });
+    }
+  };
+
+  // Live scanning controls
+  const startScanning = async () => {
+    try {
+      const result = await safeFetch('/api/scan/start', { method: 'POST' });
+      if (result) {
+        setScanningActive(true);
+        toast({
+          title: "Scanning Started",
+          description: "Live market scanning is now active",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to start scanning:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start live scanning",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const stopScanning = async () => {
+    try {
+      const result = await safeFetch('/api/scan/stop', { method: 'POST' });
+      if (result) {
+        setScanningActive(false);
+        toast({
+          title: "Scanning Stopped",
+          description: "Live market scanning has been paused",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to stop scanning:', error);
+      toast({
+        title: "Error",
+        description: "Failed to stop live scanning",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const checkScanStatus = async () => {
+    try {
+      const status = await safeFetch<{scanning: boolean}>('/api/scan/status');
+      if (status) {
+        setScanningActive(status.scanning);
+      }
+    } catch (error) {
+      console.error('Failed to check scan status:', error);
     }
   };
 
@@ -203,17 +340,23 @@ const TXDashboard: React.FC = () => {
   // Initial data fetch and periodic updates
   useEffect(() => {
     fetchScanData();
+    checkScanStatus();
     
+    // Reduced polling interval since we have Socket.IO for real-time updates
     refreshIntervalRef.current = setInterval(() => {
-      checkForAlerts();
-    }, 10000);
+      if (!socketConnected) {
+        // Only poll if socket is disconnected
+        checkForAlerts();
+      }
+      checkScanStatus();
+    }, 15000);
 
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
     };
-  }, []);
+  }, [socketConnected]);
 
   const getAssetStatusDisplay = (result: AssetResult) => {
     switch (result.status) {
@@ -230,12 +373,16 @@ const TXDashboard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !appState) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="terminal-container p-8">
-          <div className="text-primary text-xl font-bold">TX LOADING...</div>
-          <div className="text-muted-foreground mt-2">Initializing trading intelligence...</div>
+          <div className="flex items-center justify-center gap-2 text-primary text-xl font-bold">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            TX LOADING...
+          </div>
+          <div className="text-muted-foreground mt-2 text-center">Initializing trading intelligence...</div>
+          <div className="text-xs text-muted-foreground mt-4 text-center">Connecting to: {API_BASE}</div>
         </div>
       </div>
     );
@@ -259,6 +406,43 @@ const TXDashboard: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-4">
+                {/* Socket.IO Connection Status */}
+                <div className="flex items-center gap-2">
+                  {socketConnected ? (
+                    <Wifi className="w-4 h-4 text-tx-green" />
+                  ) : (
+                    <WifiOff className="w-4 h-4 text-tx-red" />
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {socketConnected ? 'Live' : 'Polling'}
+                  </span>
+                </div>
+
+                {/* Live Scanning Controls */}
+                <div className="flex items-center gap-2">
+                  {scanningActive ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={stopScanning}
+                      className="text-tx-red hover:text-tx-red/80"
+                    >
+                      <Square className="w-4 h-4 mr-1" />
+                      Stop
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={startScanning}
+                      className="text-tx-green hover:text-tx-green/80"
+                    >
+                      <Play className="w-4 h-4 mr-1" />
+                      Start
+                    </Button>
+                  )}
+                </div>
+
                 <Button
                   variant="ghost"
                   size="icon"
@@ -268,7 +452,9 @@ const TXDashboard: React.FC = () => {
                   {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                 </Button>
                 <div className="text-right">
-                  <div className="text-primary font-bold">⚡ {userCount} traders live</div>
+                  <div className="text-primary font-bold">
+                    ⚡ {userCount} traders • {scanningActive ? 'Scanning' : 'Idle'}
+                  </div>
                   <div className="text-muted-foreground text-sm">
                     Next scan: {countdown}s
                   </div>

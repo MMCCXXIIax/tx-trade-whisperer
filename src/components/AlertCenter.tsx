@@ -7,6 +7,35 @@ import { Bell, AlertTriangle, CheckCircle, Clock, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { safeFetch } from '@/lib/api';
 
+// Helper function to calculate alert stats from alert data
+const calculateAlertStats = (alerts: Alert[]): AlertStats => {
+  const activeAlerts = alerts.filter(a => a.status === 'active').length;
+  const totalAlerts = alerts.length;
+  
+  // Calculate success rate based on acknowledged alerts that had positive outcomes
+  const acknowledgedAlerts = alerts.filter(a => a.status === 'acknowledged');
+  const successfulAlerts = acknowledgedAlerts.filter(a => a.action && ['EXECUTE', 'SIMULATE'].includes(a.action)).length;
+  const successRate = acknowledgedAlerts.length > 0 ? Math.round((successfulAlerts / acknowledgedAlerts.length) * 100) : 0;
+  
+  // Count patterns
+  const patternCounts: { [key: string]: number } = {};
+  alerts.forEach(alert => {
+    patternCounts[alert.pattern] = (patternCounts[alert.pattern] || 0) + 1;
+  });
+  
+  const topPatterns = Object.entries(patternCounts)
+    .map(([pattern, count]) => ({ pattern, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  
+  return {
+    total_alerts: totalAlerts,
+    active_alerts: activeAlerts,
+    success_rate: successRate,
+    top_patterns: topPatterns
+  };
+};
+
 interface Alert {
   id?: number;
   symbol: string;
@@ -42,9 +71,13 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlerts = async () => {
     try {
-      const data = await safeFetch<{ alerts: Alert[] }>('/api/get_all_alerts');
+      const data = await safeFetch<{ alerts: Alert[] }>('/api/alerts/recent?limit=100');
       if (data) {
-        setAlerts(data.alerts || []);
+        if (data.alerts) {
+          setAlerts(data.alerts || []);
+        } else if (Array.isArray(data)) {
+          setAlerts(data);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
@@ -55,12 +88,19 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlertStats = async () => {
     try {
-      const data = await safeFetch<AlertStats>('/api/get_alert_stats');
+      const data = await safeFetch<AlertStats>('/api/alerts/stats');
       if (data) {
         setAlertStats(data);
+      } else {
+        // If no stats endpoint, calculate from alerts
+        const calculatedStats = calculateAlertStats(alerts);
+        setAlertStats(calculatedStats);
       }
     } catch (error) {
       console.error('Failed to fetch alert stats:', error);
+      // Fallback to calculated stats
+      const calculatedStats = calculateAlertStats(alerts);
+      setAlertStats(calculatedStats);
     }
   };
 

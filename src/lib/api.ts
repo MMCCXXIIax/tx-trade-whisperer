@@ -26,8 +26,15 @@ export async function safeFetch<T>(
   options: RequestInit = {},
   retries = 2
 ): Promise<T | null> {
-  // Ensure path starts with /api/
-  const cleanPath = path.startsWith('/api/') ? path : `/api/${path.startsWith('/') ? path.slice(1) : path}`;
+  // Handle paths that already start with /api/ or add /api/ prefix
+  let cleanPath: string;
+  if (path.startsWith('/api/')) {
+    cleanPath = path;
+  } else if (path.startsWith('/')) {
+    cleanPath = `/api${path}`;
+  } else {
+    cleanPath = `/api/${path}`;
+  }
   const url = `${API_BASE}${cleanPath}`;
   
   console.log(`Making API call to: ${url}`); // Debug log

@@ -8,6 +8,49 @@ import { Search, FileText, TrendingUp, Calendar, Download } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { safeFetch, API_BASE } from '@/lib/api';
 
+// Helper function to calculate detection stats from detection data
+const calculateDetectionStats = (detections: Detection[]): DetectionStats => {
+  const totalDetections = detections.length;
+  
+  // Calculate success rate based on outcome
+  const detectionsWithOutcome = detections.filter(d => d.outcome !== undefined && d.outcome !== null);
+  const successfulDetections = detectionsWithOutcome.filter(d => d.outcome === 'win');
+  const successRate = detectionsWithOutcome.length > 0 ? 
+    Math.round((successfulDetections.length / detectionsWithOutcome.length) * 100) : 0;
+  
+  // Recent activity (last 24 hours)
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const recentActivity = detections.filter(d => new Date(d.timestamp) > yesterday).length;
+  
+  // Pattern breakdown
+  const patternCounts: { [key: string]: { total: number; wins: number } } = {};
+  detections.forEach(detection => {
+    if (!patternCounts[detection.pattern]) {
+      patternCounts[detection.pattern] = { total: 0, wins: 0 };
+    }
+    patternCounts[detection.pattern].total++;
+    if (detection.outcome === 'win') {
+      patternCounts[detection.pattern].wins++;
+    }
+  });
+  
+  const patternBreakdown = Object.entries(patternCounts)
+    .map(([pattern, stats]) => ({
+      pattern,
+      count: stats.total,
+      success_rate: stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0
+    }))
+    .sort((a, b) => b.count - a.count);
+  
+  return {
+    total_detections: totalDetections,
+    success_rate: successRate,
+    pattern_breakdown: patternBreakdown,
+    recent_activity: recentActivity
+  };
+};
+
 interface Detection {
   id: number;
   symbol: string;
@@ -45,9 +88,13 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetections = async () => {
     try {
-      const data = await safeFetch<{ detections: Detection[] }>(`/api/get_detection_logs?days=${dateRange}`);
+      const data = await safeFetch<{ detections: Detection[] }>(`/api/detection/logs?days=${dateRange}`);
       if (data) {
-        setDetections(data.detections || []);
+        if (data.detections) {
+          setDetections(data.detections || []);
+        } else if (Array.isArray(data)) {
+          setDetections(data);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch detections:', error);
@@ -58,24 +105,43 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetectionStats = async () => {
     try {
-      const data = await safeFetch<DetectionStats>(`/api/get_detection_stats?days=${dateRange}`);
+      const data = await safeFetch<DetectionStats>(`/api/detection/stats?days=${dateRange}`);
       if (data) {
         setDetectionStats(data);
+      } else {
+        // Calculate stats from detections if no stats endpoint
+        const calculatedStats = calculateDetectionStats(detections);
+        setDetectionStats(calculatedStats);
       }
     } catch (error) {
       console.error('Failed to fetch detection stats:', error);
+      // Fallback to calculated stats
+      const calculatedStats = calculateDetectionStats(detections);
+      setDetectionStats(calculatedStats);
     }
   };
 
   const exportLogs = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/export_detection_logs?days=${dateRange}`);
+      const response = await fetch(`${API_BASE}/api/detection/export?days=${dateRange}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `tx_detection_logs_${dateRange}days.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        // Fallback: export as JSON if CSV not available
+        const dataStr = JSON.stringify(detections, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tx_detection_logs_${dateRange}days.json`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

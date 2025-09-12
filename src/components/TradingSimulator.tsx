@@ -70,6 +70,7 @@ const symbols = [
   { value: 'polygon', label: 'Polygon (MATIC)' }
 ];
 const symbolsList = useMemo(() => {
+  // First try to get symbols from scan results
   const results = marketData?.last_scan?.results;
   if (Array.isArray(results) && results.length) {
     return results.map((r: any) => ({
@@ -77,25 +78,45 @@ const symbolsList = useMemo(() => {
       label: r.label || String(r.symbol || '').toUpperCase(),
     }));
   }
+  // Fallback to supported assets list if available
+  if (marketData?.assets && Array.isArray(marketData.assets)) {
+    return marketData.assets.map((asset: any) => ({
+      value: asset.symbol || asset.ticker,
+      label: asset.name || asset.symbol || asset.ticker,
+    }));
+  }
   return symbols;
 }, [marketData]);
 
-  // Fetch live market data
+  // Fetch live market data and assets list
   useEffect(() => {
     const fetchMarketData = async () => {
       try {
-        const data = await safeFetch<any>('/api/scan');
-        if (data) {
-          setMarketData(data);
+        // Fetch current scan data
+        const scanData = await safeFetch<any>('/api/scan');
+        if (scanData) {
+          setMarketData(scanData);
 
           // append current price to series for the selected symbol
-          const res = data?.last_scan?.results?.find((r: any) => r.symbol === selectedSymbol);
+          const res = scanData?.last_scan?.results?.find((r: any) => r.symbol === selectedSymbol);
           if (res?.price) {
             const priceNum = parseFloat(String(res.price).replace(/[^0-9.-]+/g, ''));
             setPriceSeries((prev) => {
               const next = [...prev, { time: new Date().toLocaleTimeString(), price: priceNum }];
               return next.slice(-120); // keep last 120 points
             });
+          }
+        }
+
+        // Fetch supported assets list if not available in scan
+        if (!scanData?.assets) {
+          try {
+            const assetsData = await safeFetch<any>('/api/assets/list');
+            if (assetsData && scanData) {
+              setMarketData(prev => prev ? { ...prev, assets: assetsData } : prev);
+            }
+          } catch (error) {
+            console.log('Assets list not available:', error);
           }
         }
       } catch (error) {
@@ -112,9 +133,15 @@ const symbolsList = useMemo(() => {
   useEffect(() => {
     const fetchPositions = async () => {
       try {
-        const data = await safeFetch<any>('/paper-trades');
+        const data = await safeFetch<any>('/api/paper/portfolio');
         if (data) {
-          setPositions(data.paper_trades || []);
+          if (data.positions) {
+            setPositions(data.positions || []);
+          } else if (data.paper_trades) {
+            setPositions(data.paper_trades || []);
+          } else if (Array.isArray(data)) {
+            setPositions(data);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch positions:', error);
@@ -122,6 +149,9 @@ const symbolsList = useMemo(() => {
     };
 
     fetchPositions();
+    // Refresh positions every 30 seconds
+    const interval = setInterval(fetchPositions, 30000);
+    return () => clearInterval(interval);
   }, []);
 
 const getCurrentPrice = (symbol: string) => {
@@ -141,13 +171,13 @@ const executeTrade = async (side: 'BUY' | 'SELL') => {
       return;
     }
 
-    const res = await safeFetch<any>('/paper-trades', {
+    const res = await safeFetch<any>('/api/paper/trade', {
       method: 'POST',
       body: JSON.stringify({
         symbol: selectedSymbol,
-        side: side.toLowerCase(),
+        side: action.toLowerCase(),
         price: currentPrice,
-        qty: quantity,
+        quantity: quantity,
         pattern: 'Manual',
         confidence: 1.0,
       }),
@@ -159,9 +189,13 @@ const executeTrade = async (side: 'BUY' | 'SELL') => {
       setPrice('');
       // Refresh positions
       try {
-        const data = await safeFetch<any>('/paper-trades');
+        const data = await safeFetch<any>('/api/paper/portfolio');
         if (data) {
-          setPositions(data.paper_trades || []);
+          if (data.positions) {
+            setPositions(data.positions || []);
+          } else if (data.paper_trades) {
+            setPositions(data.paper_trades || []);
+          }
         }
       } catch {}
     } else {
@@ -191,16 +225,27 @@ const closePosition = async (symbol: string) => {
       return;
     }
 
-    const res = await safeFetch<any>('/close-position', {
+    // Find the position to get trade ID
+    const position = positions.find(p => p.symbol === symbol);
+    if (!position || !(position as any).id) {
+      toast.error('Position not found or missing trade ID');
+      return;
+    }
+
+    const res = await safeFetch<any>(`/api/paper/trade/${(position as any).id}/close`, {
       method: 'POST',
-      body: JSON.stringify({ symbol, price: currentPrice }),
+      body: JSON.stringify({ price: currentPrice }),
     });
 
-    if (res?.status === 'success') {
+    if (res?.status === 'success' || res) {
       toast.success(`Position closed for ${symbol}`);
-      const data = await safeFetch<any>('/paper-trades');
+      const data = await safeFetch<any>('/api/paper/portfolio');
       if (data) {
-        setPositions(data.paper_trades || []);
+        if (data.positions) {
+          setPositions(data.positions || []);
+        } else if (data.paper_trades) {
+          setPositions(data.paper_trades || []);
+        }
       }
     } else {
       toast.error(res?.message || 'Failed to close position');
