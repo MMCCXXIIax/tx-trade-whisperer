@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: tx-trade-whisperer-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE
+        value: https://tx-predictive-intelligence.onrender.com
+      - key: VITE_SUPABASE_PROJECT_ID
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_SUPABASE_URL
+        sync: false
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache

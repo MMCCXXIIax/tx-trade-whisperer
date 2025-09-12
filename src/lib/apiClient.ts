@@ -1,5 +1,6 @@
 // API client to replace Supabase functionality
-const API_BASE_URL = "https://tx-tradingx.onrender.com/api";
+import { API_BASE } from './api';
+const API_BASE_URL = `${API_BASE}/api`;
 
 interface ApiResponse<T> {
   data: T | null;
