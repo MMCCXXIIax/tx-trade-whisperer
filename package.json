@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm install @vitejs/plugin-react-swc @vitejs/plugin-react --no-save && vite build",
+    "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "start": "node server.js",
