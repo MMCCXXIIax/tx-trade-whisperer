@@ -36,7 +36,6 @@ interface TradingStats {
   avg_trade: number;
 }
 
-<<<<<<< HEAD
 // Helper function to calculate stats from trades when backend doesn't provide them
 const calculateStatsFromTrades = (trades: PaperTrade[]): TradingStats => {
   const closedTrades = trades.filter(t => t.status === 'closed');
@@ -61,9 +60,6 @@ const calculateStatsFromTrades = (trades: PaperTrade[]): TradingStats => {
     avg_trade: avgTrade
   };
 };
-
-=======
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 // Use centralized API utilities
 
 const PaperTrading: React.FC = () => {
@@ -81,16 +77,17 @@ const PaperTrading: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchPaperTrades = async () => {
-<<<<<<< HEAD
+    setIsLoading(true);
     try {
-      const json = await safeFetch<{ paper_trades: PaperTrade[]; positions: PaperTrade[] }>('/api/paper/portfolio');
-      if (json?.paper_trades) {
-        setPaperTrades(json.paper_trades);
-      } else if (json?.positions) {
-        setPaperTrades(json.positions);
-      } else if (Array.isArray(json)) {
-        // Handle direct array response
-        setPaperTrades(json);
+      const response = await apiClient.getPaperPortfolio();
+      if (response && response.data) {
+        const portfolio = response.data;
+        if (portfolio.positions) {
+          setPaperTrades(portfolio.positions);
+        } else if (Array.isArray(portfolio)) {
+          // Handle direct array response
+          setPaperTrades(portfolio);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch paper trades:', error);
@@ -101,23 +98,26 @@ const PaperTrading: React.FC = () => {
 
   const fetchTradingStats = async () => {
     try {
-      const json = await safeFetch<TradingStats>('/api/paper/portfolio');
-      if (json && json.total_balance !== undefined) {
-        // Backend returned portfolio with stats
-        setTradingStats({
-          total_balance: json.total_balance || 100000,
-          total_pnl: json.total_pnl || 0,
-          win_rate: json.win_rate || 0,
-          total_trades: json.total_trades || paperTrades.length,
-          open_positions: json.open_positions || paperTrades.filter(t => t.status === 'open').length,
-          best_trade: json.best_trade || 0,
-          worst_trade: json.worst_trade || 0,
-          avg_trade: json.avg_trade || 0
-        });
-      } else {
-        // If no stats in portfolio response, calculate from trades
-        const stats = calculateStatsFromTrades(paperTrades);
-        setTradingStats(stats);
+      const response = await apiClient.getPaperPortfolio();
+      if (response && response.data) {
+        const portfolio = response.data;
+        if (portfolio.balance !== undefined) {
+          // Backend returned portfolio with stats
+          setTradingStats({
+            total_balance: portfolio.balance || 100000,
+            total_pnl: portfolio.pnl || 0,
+            win_rate: portfolio.win_rate || 0,
+            total_trades: portfolio.total_trades || paperTrades.length,
+            open_positions: portfolio.positions?.filter(p => p.status === 'open').length || 0,
+            best_trade: portfolio.best_trade || 0,
+            worst_trade: portfolio.worst_trade || 0,
+            avg_trade: portfolio.avg_trade || 0
+          });
+        } else {
+          // If no stats in portfolio response, calculate from trades
+          const stats = calculateStatsFromTrades(paperTrades);
+          setTradingStats(stats);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch trading stats:', error);
@@ -125,8 +125,7 @@ const PaperTrading: React.FC = () => {
       const stats = calculateStatsFromTrades(paperTrades);
       setTradingStats(stats);
     }
-=======
-    const json = await safeFetch<{ paper_trades: PaperTrade[] }>('/api/paper-trades');
+  };
     if (json?.paper_trades) setPaperTrades(json.paper_trades);
     setIsLoading(false);
   };

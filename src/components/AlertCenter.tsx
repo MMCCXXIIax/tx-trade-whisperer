@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, AlertTriangle, CheckCircle, Clock, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { safeFetch } from '@/lib/api';
+import { apiClient } from '@/lib/apiClient';
+import { safeApiCall } from '@/lib/errorHandling';
 
-<<<<<<< HEAD
 // Helper function to calculate alert stats from alert data
 const calculateAlertStats = (alerts: Alert[]): AlertStats => {
   const activeAlerts = alerts.filter(a => a.status === 'active').length;
@@ -36,9 +36,6 @@ const calculateAlertStats = (alerts: Alert[]): AlertStats => {
     top_patterns: topPatterns
   };
 };
-
-=======
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 interface Alert {
   id?: number;
   symbol: string;
@@ -74,7 +71,6 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlerts = async () => {
     try {
-<<<<<<< HEAD
       const data = await safeFetch<{ alerts: Alert[] }>('/api/alerts/recent?limit=100');
       if (data) {
         if (data.alerts) {
@@ -82,11 +78,6 @@ const AlertCenter: React.FC = () => {
         } else if (Array.isArray(data)) {
           setAlerts(data);
         }
-=======
-      const data = await safeFetch<{ alerts: Alert[] }>('/api/get_all_alerts');
-      if (data) {
-        setAlerts(data.alerts || []);
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       }
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
@@ -97,7 +88,6 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlertStats = async () => {
     try {
-<<<<<<< HEAD
       const data = await safeFetch<AlertStats>('/api/alerts/stats');
       if (data) {
         setAlertStats(data);
@@ -111,14 +101,6 @@ const AlertCenter: React.FC = () => {
       // Fallback to calculated stats
       const calculatedStats = calculateAlertStats(alerts);
       setAlertStats(calculatedStats);
-=======
-      const data = await safeFetch<AlertStats>('/api/get_alert_stats');
-      if (data) {
-        setAlertStats(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch alert stats:', error);
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
     }
   };
 

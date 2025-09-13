@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { safeFetch } from '@/lib/api';
+import { apiClient } from '@/lib/apiClient';
+import { safeApiCall } from '@/lib/errorHandling';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Position {
