@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, TrendingDown, PieChart, BarChart3, Play, Square, ShoppingCart } from 'lucide-react';
-import { safeFetch } from '@/lib/api'; // same helper as PortfolioPanel
+import { apiClient } from '@/lib/apiClient';
+import { safeApiCall } from '@/lib/errorHandling';
 
 interface PaperTrade {
   id: number;
@@ -60,7 +61,6 @@ const calculateStatsFromTrades = (trades: PaperTrade[]): TradingStats => {
     avg_trade: avgTrade
   };
 };
-// Use centralized API utilities
 
 const PaperTrading: React.FC = () => {
   const [paperTrades, setPaperTrades] = useState<PaperTrade[]>([]);
@@ -126,15 +126,6 @@ const PaperTrading: React.FC = () => {
       setTradingStats(stats);
     }
   };
-    if (json?.paper_trades) setPaperTrades(json.paper_trades);
-    setIsLoading(false);
-  };
-
-  const fetchTradingStats = async () => {
-    const json = await safeFetch<TradingStats>('/api/get_trading_stats');
-    if (json) setTradingStats(json);
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
-  };
 
   const placePaperTrade = async () => {
     if (!symbol || !quantity || !price) {
@@ -142,44 +133,39 @@ const PaperTrading: React.FC = () => {
       return;
     }
     setIsTrading(true);
-<<<<<<< HEAD
-    const result = await safeFetch('/api/paper/trade', {
-=======
-    const result = await safeFetch('/api/paper-trades', {
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
-      method: 'POST',
-      body: JSON.stringify({
-        symbol: symbol.toUpperCase(),
-        side: action.toLowerCase(),
-<<<<<<< HEAD
-        quantity: parseFloat(quantity),
-=======
-        qty: parseFloat(quantity),
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
-        price: parseFloat(price),
-        pattern: 'Manual',
-        confidence: 1.0,
-      }),
-    });
-    if (result) {
-      toast({ title: 'Trade Placed', description: `${action} ${quantity} ${symbol.toUpperCase()} @ $${price}` });
-      setSymbol('');
-      setQuantity('');
-      setPrice('');
-      setAction('BUY');
-      fetchPaperTrades();
-      fetchTradingStats();
-<<<<<<< HEAD
-    } else {
+    
+    try {
+      const result = await safeApiCall(
+        apiClient.executePaperTrade({
+          symbol: symbol.toUpperCase(),
+          action: action.toLowerCase(),
+          quantity: parseFloat(quantity),
+          price: parseFloat(price),
+          pattern: 'Manual',
+          confidence: 1.0,
+        })
+      );
+      
+      if (result.success) {
+        toast({ title: 'Trade Placed', description: `${action} ${quantity} ${symbol.toUpperCase()} @ $${price}` });
+        setSymbol('');
+        setQuantity('');
+        setPrice('');
+        setAction('BUY');
+        fetchPaperTrades();
+        fetchTradingStats();
+      } else {
+        toast({ title: 'Trade Failed', description: 'Unable to place paper trade. Please try again.', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Error placing paper trade:', error);
       toast({ title: 'Trade Failed', description: 'Unable to place paper trade. Please try again.', variant: 'destructive' });
-=======
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
+    } finally {
+      setIsTrading(false);
     }
-    setIsTrading(false);
   };
 
   const closePosition = async (symbol: string) => {
-<<<<<<< HEAD
     try {
       // Find the trade to close
       const trade = paperTrades.find(t => t.symbol === symbol && t.status === 'open');
@@ -188,11 +174,11 @@ const PaperTrading: React.FC = () => {
         return;
       }
 
-      const result = await safeFetch(`/api/paper/trade/${trade.id}/close`, {
-        method: 'POST',
-        body: JSON.stringify({ price: 0 }), // Backend will get current price
-      });
-      if (result) {
+      const result = await safeApiCall(
+        apiClient.closePaperTrade(trade.id)
+      );
+      
+      if (result.success) {
         toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
         fetchPaperTrades();
         fetchTradingStats();
@@ -202,16 +188,6 @@ const PaperTrading: React.FC = () => {
     } catch (error) {
       console.error('Failed to close position:', error);
       toast({ title: 'Close Failed', description: `Error closing ${symbol} position.`, variant: 'destructive' });
-=======
-    const result = await safeFetch('/api/close-position', {
-      method: 'POST',
-      body: JSON.stringify({ symbol, price: 0 }), // Backend will get current price
-    });
-    if (result) {
-      toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
-      fetchPaperTrades();
-      fetchTradingStats();
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
     }
   };
 
@@ -366,244 +342,188 @@ const PaperTrading: React.FC = () => {
               </CardContent>
             </Card>
           </div>
-
-          {/* Performance Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="terminal-container">
-              <CardHeader>
-                <CardTitle className="text-primary flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  Performance Breakdown
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>Win Rate</span>
-                      <span>{tradingStats.win_rate}%</span>
-                    </div>
-                    <Progress value={tradingStats.win_rate} className="h-2" />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="text-center p-3 border border-border rounded">
-                      <div className="text-sm text-muted-foreground">Best Trade</div>
-                      <div className="font-bold text-green-400">+${tradingStats.best_trade.toFixed(2)}</div>
-                    </div>
-                    <div className="text-center p-3 border border-border rounded">
-                      <div className="text-sm text-muted-foreground">Worst Trade</div>
-                      <div className="font-bold text-red-400">${tradingStats.worst_trade.toFixed(2)}</div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-center p-3 border border-border rounded">
-                    <div className="text-sm text-muted-foreground">Average P&L</div>
-                    <div className="font-bold">{formatPnL(tradingStats.avg_trade)}</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="terminal-container">
               <CardHeader>
                 <CardTitle className="text-primary flex items-center gap-2">
                   <PieChart className="w-5 h-5" />
-                  Current Status
+                  Performance Metrics
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 border border-border rounded">
-                    <div className="text-2xl font-bold text-blue-400">{tradingStats.open_positions}</div>
-                    <div className="text-sm text-muted-foreground">Open Positions</div>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Open Positions</span>
+                    <span className="font-mono">{tradingStats.open_positions}</span>
                   </div>
-                  <div className="text-center p-4 border border-border rounded">
-                    <div className="text-2xl font-bold text-accent">{tradingStats.total_trades - tradingStats.open_positions}</div>
-                    <div className="text-sm text-muted-foreground">Closed Trades</div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Best Trade</span>
+                    <span className="font-mono text-green-400">+${tradingStats.best_trade.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Worst Trade</span>
+                    <span className="font-mono text-red-400">${tradingStats.worst_trade.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Average Trade</span>
+                    <span className="font-mono">${tradingStats.avg_trade.toFixed(2)}</span>
                   </div>
                 </div>
-                
-                {tradingStats.total_pnl > 0 ? (
-                  <div className="text-center p-3 bg-green-500/10 border border-green-500/30 rounded">
-                    <TrendingUp className="w-6 h-6 text-green-400 mx-auto mb-1" />
-                    <div className="text-sm text-green-400">Portfolio Growing</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="terminal-container">
+              <CardHeader>
+                <CardTitle className="text-primary flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5" />
+                  Performance Chart
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[150px] flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p>Detailed performance charts coming soon</p>
                   </div>
-                ) : (
-                  <div className="text-center p-3 bg-red-500/10 border border-red-500/30 rounded">
-                    <TrendingDown className="w-6 h-6 text-red-400 mx-auto mb-1" />
-                    <div className="text-sm text-red-400">Portfolio Declining</div>
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           </div>
         </>
       )}
-
-      {/* Trading Tabs */}
-      <Tabs defaultValue="open" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="open">Open Positions</TabsTrigger>
-          <TabsTrigger value="history">Trading History</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="open" className="mt-6">
-          <Card className="terminal-container">
-            <CardHeader>
-              <CardTitle className="text-primary flex items-center gap-2">
-                <Play className="w-5 h-5" />
-                Open Positions ({paperTrades.filter(t => t.status === 'open').length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+      
+      {/* Paper Trades */}
+      <Card className="terminal-container">
+        <CardHeader>
+          <CardTitle className="text-primary flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Paper Trades
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="open">
+            <TabsList className="mb-4">
+              <TabsTrigger value="open">Open Positions</TabsTrigger>
+              <TabsTrigger value="closed">Trade History</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="open">
               <ScrollArea className="h-[400px]">
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {paperTrades.filter(t => t.status === 'open').length === 0 ? (
                     <div className="text-center py-12">
-                      <Play className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-bold mb-2">No open positions</h3>
-                      <p className="text-muted-foreground">Place a trade to start building your portfolio</p>
+                      <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-bold mb-2">No Open Positions</h3>
+                      <p className="text-muted-foreground">Place a paper trade to get started</p>
                     </div>
                   ) : (
-                    paperTrades.filter(t => t.status === 'open').map((trade) => (
-                      <div
-                        key={trade.id}
-                        className="border border-border rounded-lg p-4 space-y-3"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="font-bold text-primary text-lg">{trade.symbol}</span>
-                            {getActionBadge(trade.action)}
-                            {getStatusBadge(trade.status)}
-                            {trade.pattern && (
-                              <Badge variant="outline">{trade.pattern}</Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => closePosition(trade.symbol)}
-                              className="text-red-400 border-red-400 hover:bg-red-400/10"
-                            >
-                              <Square className="w-4 h-4 mr-1" />
-                              Close
-                            </Button>
-                            <div className="text-right">
-                              <div className="text-sm text-muted-foreground">
-                                {new Date(trade.timestamp).toLocaleString()}
-                              </div>
+                    paperTrades
+                      .filter(t => t.status === 'open')
+                      .map((trade, index) => (
+                        <div
+                          key={trade.id || index}
+                          className="border border-border rounded-lg p-4 space-y-3"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-primary">{trade.symbol}</span>
+                              {getActionBadge(trade.action)}
+                              {trade.pattern && <Badge variant="outline">{trade.pattern}</Badge>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(trade.status)}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => closePosition(trade.symbol)}
+                              >
+                                Close
+                              </Button>
                             </div>
                           </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Entry Price:</span>
-                            <div className="font-mono">${trade.entry_price}</div>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Quantity:</span>
-                            <div className="font-mono">{trade.quantity}</div>
-                          </div>
-                          {trade.confidence && (
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
-                              <span className="text-muted-foreground">Confidence:</span>
-                              <div className="font-mono">{trade.confidence}</div>
+                              <span className="text-muted-foreground">Quantity:</span>
+                              <div className="font-mono">{trade.quantity}</div>
                             </div>
-                          )}
-                          <div>
-                            <span className="text-muted-foreground">Trade ID:</span>
-                            <div className="font-mono">#{trade.id}</div>
+                            <div>
+                              <span className="text-muted-foreground">Entry Price:</span>
+                              <div className="font-mono">${trade.entry_price}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Current Value:</span>
+                              <div className="font-mono">$---.--</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Unrealized P&L:</span>
+                              <div className="font-mono">$---.--</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))
                   )}
                 </div>
               </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history" className="mt-6">
-          <Card className="terminal-container">
-            <CardHeader>
-              <CardTitle className="text-primary flex items-center gap-2">
-                <DollarSign className="w-5 h-5" />
-                Complete Trading History ({paperTrades.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  {paperTrades.length === 0 ? (
+            </TabsContent>
+            
+            <TabsContent value="closed">
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-4">
+                  {paperTrades.filter(t => t.status === 'closed').length === 0 ? (
                     <div className="text-center py-12">
                       <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-bold mb-2">No paper trades yet</h3>
-                      <p className="text-muted-foreground">Start trading to see your history here</p>
+                      <h3 className="text-lg font-bold mb-2">No Trade History</h3>
+                      <p className="text-muted-foreground">Closed trades will appear here</p>
                     </div>
                   ) : (
-                    paperTrades.map((trade) => (
-                      <div
-                        key={trade.id}
-                        className="border border-border rounded-lg p-4 space-y-3"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="font-bold text-primary text-lg">{trade.symbol}</span>
-                            {getActionBadge(trade.action)}
-                            {getStatusBadge(trade.status)}
-                            {trade.pattern && (
-                              <Badge variant="outline">{trade.pattern}</Badge>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            {trade.pnl !== undefined && (
-                              <div className="font-bold text-lg">{formatPnL(trade.pnl)}</div>
-                            )}
-                            <div className="text-sm text-muted-foreground">
-                              {new Date(trade.timestamp).toLocaleString()}
+                    paperTrades
+                      .filter(t => t.status === 'closed')
+                      .map((trade, index) => (
+                        <div
+                          key={trade.id || index}
+                          className="border border-border rounded-lg p-4 space-y-3"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-primary">{trade.symbol}</span>
+                              {getActionBadge(trade.action)}
+                              {trade.pattern && <Badge variant="outline">{trade.pattern}</Badge>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(trade.status)}
+                              {trade.pnl !== undefined && formatPnL(trade.pnl)}
                             </div>
                           </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Entry Price:</span>
-                            <div className="font-mono">${trade.entry_price}</div>
-                          </div>
-                          {trade.exit_price && (
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="text-muted-foreground">Quantity:</span>
+                              <div className="font-mono">{trade.quantity}</div>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Entry Price:</span>
+                              <div className="font-mono">${trade.entry_price}</div>
+                            </div>
                             <div>
                               <span className="text-muted-foreground">Exit Price:</span>
-                              <div className="font-mono">${trade.exit_price}</div>
+                              <div className="font-mono">${trade.exit_price || '---.--'}</div>
                             </div>
-                          )}
-                          <div>
-                            <span className="text-muted-foreground">Quantity:</span>
-                            <div className="font-mono">{trade.quantity}</div>
-                          </div>
-                          {trade.confidence && (
                             <div>
-                              <span className="text-muted-foreground">Confidence:</span>
-                              <div className="font-mono">{trade.confidence}</div>
+                              <span className="text-muted-foreground">Date:</span>
+                              <div className="font-mono">{new Date(trade.timestamp).toLocaleDateString()}</div>
                             </div>
-                          )}
-                          <div>
-                            <span className="text-muted-foreground">Trade ID:</span>
-                            <div className="font-mono">#{trade.id}</div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      ))
                   )}
                 </div>
               </ScrollArea>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };

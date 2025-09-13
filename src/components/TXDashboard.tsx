@@ -24,6 +24,7 @@ interface ScanData {
 }
 
 interface Alert {
+  id?: number;
   symbol: string;
   pattern: string;
   confidence: string;
@@ -140,8 +141,8 @@ const TXDashboard: React.FC = () => {
     try {
       setIsLoading(true);
       // Use the new API client
-      const response = await apiClient.getMarketScan();
-      if (response && response.data) {
+      const response = await safeApiCall(apiClient.getMarketScan());
+      if (response.success && response.data) {
         console.log('Scan data received:', response.data);
         setAppState(response.data);
       } else {
@@ -163,8 +164,8 @@ const TXDashboard: React.FC = () => {
   const checkForAlerts = async () => {
     try {
       // Use the new API client
-      const response = await apiClient.getRecentAlerts(1);
-      if (response && response.data && response.data.length > 0 && !activeAlert) {
+      const response = await safeApiCall(apiClient.getRecentAlerts(1));
+      if (response.success && response.data && response.data.length > 0 && !activeAlert) {
         // Convert API alert format to component format
         const apiAlert = response.data[0];
         const formattedAlert: Alert = {
@@ -177,30 +178,12 @@ const TXDashboard: React.FC = () => {
           action: apiAlert.risk_level
         };
         processNewAlert(formattedAlert);
-        
-        // Play alert sound
-        if (soundEnabled && alertAudioRef.current) {
-          alertAudioRef.current.play().catch(e => console.log('Audio play failed'));
-        }
-        
-        // Update TX personality
-        const randomPersonality = txPersonalities[Math.floor(Math.random() * txPersonalities.length)];
-        setTxPersonality(randomPersonality);
-        
-        // Show toast notification
-        toast({
-          title: "🚨 TX ALERT ACTIVATED",
-          description: `${newAlert.symbol}: ${newAlert.pattern} (${newAlert.confidence})`,
-          duration: 10000,
-        });
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       }
     } catch (error) {
       console.error('Failed to check alerts:', error);
     }
   };
 
-<<<<<<< HEAD
   // Process new alert (used by both polling and Socket.IO)
   const processNewAlert = (newAlert: Alert) => {
     if (activeAlert) return; // Don't override existing alert
@@ -237,10 +220,7 @@ const TXDashboard: React.FC = () => {
         action: action
       };
 
-      await safeFetch('/api/handle_alert_response', {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
+      await safeApiCall(apiClient.handleAlertResponse(payload));
 
       // Update TX personality based on action
       const responses = {
@@ -271,18 +251,15 @@ const TXDashboard: React.FC = () => {
   const logOutcome = async (outcome: string) => {
     try {
       // Get latest detection ID
-      const detectionData = await safeFetch<{detection_id: string}>('/api/get_latest_detection_id');
+      const detectionResponse = await safeApiCall(apiClient.getLatestDetectionId());
       
-      if (detectionData && detectionData.detection_id) {
-        const result = await safeFetch('/api/log_outcome', {
-          method: 'POST',
-          body: JSON.stringify({
-            detection_id: detectionData.detection_id,
-            outcome: outcome
-          })
-        });
+      if (detectionResponse.success && detectionResponse.data && detectionResponse.data.detection_id) {
+        const result = await safeApiCall(apiClient.logTradeOutcome({
+          detection_id: detectionResponse.data.detection_id,
+          outcome: outcome
+        }));
         
-        if (result) {
+        if (result.success) {
           toast({
             title: "Outcome Logged",
             description: "Thank you for the feedback!",
@@ -290,15 +267,12 @@ const TXDashboard: React.FC = () => {
         }
       } else {
         // If no detection ID is available, send outcome with placeholder
-        const result = await safeFetch('/api/log_outcome', {
-          method: 'POST',
-          body: JSON.stringify({
-            detection_id: 'latest', // Special value that backend can interpret
-            outcome: outcome
-          })
-        });
+        const result = await safeApiCall(apiClient.logTradeOutcome({
+          detection_id: 'latest', // Special value that backend can interpret
+          outcome: outcome
+        }));
         
-        if (result) {
+        if (result.success) {
           toast({
             title: "Outcome Logged",
             description: "Thank you for the feedback!",
@@ -319,8 +293,8 @@ const TXDashboard: React.FC = () => {
   const startScanning = async () => {
     try {
       // Use the new API client
-      const response = await apiClient.startScanner();
-      if (response && response.data) {
+      const response = await safeApiCall(apiClient.startScanner());
+      if (response.success) {
         setScanningActive(true);
         toast({
           title: "Scanning Started",
@@ -340,8 +314,8 @@ const TXDashboard: React.FC = () => {
   const stopScanning = async () => {
     try {
       // Use the new API client
-      const response = await apiClient.stopScanner();
-      if (response && response.data) {
+      const response = await safeApiCall(apiClient.stopScanner());
+      if (response.success) {
         setScanningActive(false);
         toast({
           title: "Scanning Stopped",
@@ -361,14 +335,15 @@ const TXDashboard: React.FC = () => {
   const checkScanStatus = async () => {
     try {
       // Use the new API client
-      const response = await apiClient.getScannerStatus();
-      if (response && response.data) {
+      const response = await safeApiCall(apiClient.getScannerStatus());
+      if (response.success && response.data) {
         setScanningActive(response.data.status === 'running');
       }
     } catch (error) {
       console.error('Failed to check scan status:', error);
     }
   };
+  
   // Countdown timer
   useEffect(() => {
     countdownIntervalRef.current = setInterval(() => {
@@ -413,286 +388,299 @@ const TXDashboard: React.FC = () => {
     switch (result.status) {
       case 'pattern':
         return (
-          <span className="pattern-detected">
-            {result.pattern} ({result.confidence})
-          </span>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-yellow-500" />
+            <span className="text-yellow-500 font-medium">{result.pattern || 'Pattern Detected'}</span>
+            {result.confidence && <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full">{result.confidence}</span>}
+          </div>
+        );
+      case 'no_pattern':
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">No Pattern</span>
+          </div>
         );
       case 'error':
-        return <span className="status-error">ERROR</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
+            <span className="text-red-500">{result.message || 'Error'}</span>
+          </div>
+        );
       default:
-        return <span className="status-idle">IDLE</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">{result.status}</span>
+          </div>
+        );
     }
   };
 
-  if (isLoading && !appState) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="terminal-container p-8">
-          <div className="flex items-center justify-center gap-2 text-primary text-xl font-bold">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            TX LOADING...
-          </div>
-          <div className="text-muted-foreground mt-2 text-center">Initializing trading intelligence...</div>
-          <div className="text-xs text-muted-foreground mt-4 text-center">Connecting to: {API_BASE}</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
-      <audio ref={alertAudioRef} preload="auto" />
+    <div className="space-y-6">
+      {/* Hidden audio element for alerts */}
+      <audio ref={alertAudioRef} />
       
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <Card className="terminal-container">
-          <CardHeader className="border-b border-border">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-primary text-2xl font-bold tracking-tight">
-                  TX PREDICTIVE INTELLIGENCE
-                </CardTitle>
-                <p className="text-muted-foreground text-sm mt-1">
-                  AI-Powered Market Anticipation System | Kampala, Uganda
-                </p>
+      {/* Status Bar */}
+      <Card className="terminal-container">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {socketConnected ? (
+                  <Wifi className="w-5 h-5 text-green-500" />
+                ) : (
+                  <WifiOff className="w-5 h-5 text-red-500" />
+                )}
+                <span className={socketConnected ? "text-green-500" : "text-red-500"}>
+                  {socketConnected ? "Connected" : "Disconnected"}
+                </span>
               </div>
-              <div className="flex items-center gap-4">
-<<<<<<< HEAD
-                {/* Socket.IO Connection Status */}
-                <div className="flex items-center gap-2">
-                  {socketConnected ? (
-                    <Wifi className="w-4 h-4 text-tx-green" />
-                  ) : (
-                    <WifiOff className="w-4 h-4 text-tx-red" />
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {socketConnected ? 'Live' : 'Polling'}
-                  </span>
-                </div>
-
-                {/* Live Scanning Controls */}
-                <div className="flex items-center gap-2">
-                  {scanningActive ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={stopScanning}
-                      className="text-tx-red hover:text-tx-red/80"
-                    >
-                      <Square className="w-4 h-4 mr-1" />
-                      Stop
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={startScanning}
-                      className="text-tx-green hover:text-tx-green/80"
-                    >
-                      <Play className="w-4 h-4 mr-1" />
-                      Start
-                    </Button>
-                  )}
-                </div>
-
-
+              
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-muted-foreground">{userCount} users online</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
                 <Button
-                  variant="ghost"
-                  size="icon"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1"
                   onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="text-muted-foreground hover:text-primary"
                 >
-                  {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                  {soundEnabled ? (
+                    <>
+                      <Volume2 className="w-4 h-4" />
+                      <span className="text-xs">Sound On</span>
+                    </>
+                  ) : (
+                    <>
+                      <VolumeX className="w-4 h-4" />
+                      <span className="text-xs">Sound Off</span>
+                    </>
+                  )}
                 </Button>
-                <div className="text-right">
-                  <div className="text-primary font-bold">
-                    ⚡ {userCount} traders • {scanningActive ? 'Scanning' : 'Idle'}
-                  </div>
-                  <div className="text-muted-foreground text-sm">
-                    Next scan: {countdown}s
-                  </div>
-                </div>
               </div>
             </div>
-          </CardHeader>
-        </Card>
-
-        {/* Alert Interface */}
-        {activeAlert && (
-          <Card className="alert-glow">
-            <CardHeader>
-              <CardTitle className="text-destructive text-lg flex items-center gap-2">
-                <AlertTriangle className="animate-pulse" />
-                🚨 TX ALERT ACTIVATED
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-sm">
-                  <div className="font-bold">{activeAlert.symbol}: {activeAlert.pattern} ({activeAlert.confidence})</div>
-                  <div className="text-muted-foreground">Price: {activeAlert.price} | Time: {activeAlert.time}</div>
-                  <div className="mt-2 text-accent-foreground">{activeAlert.explanation}</div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleAlert('IGNORE')}
-                    className="tx-button tx-button-secondary"
-                  >
-                    😴 Ignore
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleAlert('SIMULATE')}
-                    className="tx-button tx-button-accent"
-                  >
-                    📊 Simulate
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleAlert('EXECUTE')}
-                    className="tx-button tx-button-primary"
-                  >
-                    ⚡ Execute
-                  </Button>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-sm">Next Scan:</span>
+                <span className="font-mono">{Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}</span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {scanningActive ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleAlert('SNOOZE')}
-                    className="tx-button border-tx-orange text-tx-orange hover:bg-tx-orange/20"
+                    className="h-8 gap-1 bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-500"
+                    onClick={stopScanning}
                   >
-                    ⏰ Snooze 5m
+                    <Square className="w-3 h-3" />
+                    <span className="text-xs">Stop Scanning</span>
                   </Button>
-                </div>
-                
-                <div className="text-xs text-muted-foreground">
-                  Suggested amounts: $100 | $250 | $500 | $1000
-                </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1 bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:text-green-500"
+                    onClick={startScanning}
+                  >
+                    <Play className="w-3 h-3" />
+                    <span className="text-xs">Start Scanning</span>
+                  </Button>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Asset Grid */}
-        <Card className="terminal-container">
+              
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={fetchScanData}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <TrendingUp className="w-4 h-4" />
+                )}
+                <span className="text-xs ml-1">Refresh</span>
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Active Alert */}
+      {activeAlert && (
+        <Card className="terminal-container border-yellow-500/50 bg-yellow-500/5">
           <CardHeader>
-            <CardTitle className="text-primary flex items-center gap-2">
-              <TrendingUp />
-              Market Monitor
+            <CardTitle className="text-yellow-500 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              TX Alert: {activeAlert.pattern} Detected
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {appState?.last_scan?.results?.map((result, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between py-3 px-2 border-b border-border last:border-b-0"
-                >
-                  <span className="font-bold text-primary min-w-0 flex-1">
-                    {result.symbol}
-                  </span>
-                  <span className="price-display text-center flex-1">
-                    {result.price || 'N/A'}
-                  </span>
-                  <div className="text-right min-w-0 flex-1">
-                    {getAssetStatusDisplay(result)}
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Symbol:</span>
+                    <span className="font-bold">{activeAlert.symbol}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Price:</span>
+                    <span className="font-mono">{activeAlert.price}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Confidence:</span>
+                    <span className="font-mono">{activeAlert.confidence}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">Time:</span>
+                    <span className="font-mono">{activeAlert.time}</span>
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            {appState?.last_scan && (
-              <div className="mt-4 pt-4 border-t border-border text-xs text-muted-foreground">
-                Scan #{appState.last_scan.id} completed at {appState.last_scan.time}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Latest Signal */}
-        {appState?.last_signal && (
-          <Card className="terminal-container border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-primary text-sm">🚨 Latest Signal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
-                <div className="font-bold">
-                  {appState.last_signal.symbol} {appState.last_signal.timeframe}: {appState.last_signal.pattern} ({appState.last_signal.confidence})
+                
+                <div className="flex flex-col justify-between">
+                  <div className="italic text-yellow-500/80 mb-4">
+                    "{txPersonality}"
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="border-green-500 text-green-500 hover:bg-green-500/20"
+                      onClick={() => handleAlert('EXECUTE')}
+                    >
+                      Execute Trade
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-blue-500 text-blue-500 hover:bg-blue-500/20"
+                      onClick={() => handleAlert('SIMULATE')}
+                    >
+                      Paper Trade
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-orange-500 text-orange-500 hover:bg-orange-500/20"
+                      onClick={() => handleAlert('SNOOZE')}
+                    >
+                      Snooze
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-gray-500 text-gray-500 hover:bg-gray-500/20"
+                      onClick={() => handleAlert('IGNORE')}
+                    >
+                      Ignore
+                    </Button>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {appState.last_signal.time}
+              </div>
+              
+              <div className="border-t border-border pt-4">
+                <div className="text-muted-foreground mb-2">Analysis:</div>
+                <p className="text-sm">{activeAlert.explanation}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Scan Results */}
+      <Card className="terminal-container">
+        <CardHeader>
+          <CardTitle className="text-primary">Market Scan Results</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : !appState?.last_scan ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No scan data available. Backend may be starting up.</p>
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={fetchScanData}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-muted-foreground">
+                  Last Scan: {appState.last_scan.time || 'Unknown'}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Scan ID: {appState.last_scan.id || 'Unknown'}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Trade Outcome Buttons */}
-        <Card className="terminal-container">
-          <CardContent className="pt-6">
-            <div className="flex gap-3 justify-center">
-              <Button
-                onClick={() => logOutcome('win')}
-                className="tx-button tx-button-primary"
-              >
-                ✅ Trade Won
-              </Button>
-              <Button
-                onClick={() => logOutcome('loss')}
-                variant="destructive"
-                className="tx-button tx-button-destructive"
-              >
-                ❌ Trade Lost
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* TX Personality */}
-        <Card className="terminal-container border-l-4 border-l-primary">
-          <CardContent className="pt-6">
-            <div className="space-y-2">
-              <div className="font-bold text-primary">💭 TX Says:</div>
-              <div className="italic text-muted-foreground">
-                "{txPersonality}"
+              
+              <div className="border rounded-md">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Symbol</th>
+                      <th className="text-left p-2">Price</th>
+                      <th className="text-left p-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {appState.last_scan.results.map((result, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-muted/20' : ''}>
+                        <td className="p-2 font-medium">{result.symbol}</td>
+                        <td className="p-2 font-mono">{result.price || '—'}</td>
+                        <td className="p-2">{getAssetStatusDisplay(result)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* TX Pro Access */}
-        <Card className="bg-black border-primary/30">
-          <CardHeader>
-            <CardTitle className="text-primary">🚀 TX PRO ACCESS</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm">Unlock the full "Jealous Ex" experience:</p>
-            <ul className="space-y-2 text-sm">
-              <li>🔔 Multi-device sound alerts (phone, tablet, desktop)</li>
-              <li>📱 Telegram/WhatsApp notifications</li>
-              <li>🎯 Strategy Builder (no-code)</li>
-              <li>📊 15+ assets including forex</li>
-              <li>🧠 AI sentiment overlay</li>
-              <li>📈 Performance analytics & journaling</li>
-            </ul>
-            <div className="space-y-2">
-              <p className="font-bold text-primary">$5/month flat rate</p>
-              <p className="text-xs text-muted-foreground">No profit sharing, pure SaaS</p>
-              <p className="text-sm">DM on IG @robert.manejk</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <div className="text-center text-xs text-muted-foreground">
-          TX Engine v0.9 | Data: Alpha Vantage
-        </div>
-      </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Feedback Section */}
+      <Card className="terminal-container">
+        <CardHeader>
+          <CardTitle className="text-primary">Trade Feedback</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-sm text-muted-foreground mb-4">
+            Did the last alert lead to a profitable trade? Your feedback helps improve TX's pattern detection.
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="border-green-500 text-green-500 hover:bg-green-500/20"
+              onClick={() => logOutcome('win')}
+            >
+              Profitable
+            </Button>
+            <Button
+              variant="outline"
+              className="border-red-500 text-red-500 hover:bg-red-500/20"
+              onClick={() => logOutcome('loss')}
+            >
+              Unprofitable
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => logOutcome('neutral')}
+            >
+              Neutral/Didn't Trade
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
