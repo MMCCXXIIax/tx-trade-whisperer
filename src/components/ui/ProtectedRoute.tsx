@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
 
-type Status = 'checking' | 'guest' | 'needsProfile' | 'ready'
+type Status = 'checking' | 'guest' | 'ready'
 
 export default function ProtectedRoute({
   children,
@@ -14,7 +14,7 @@ export default function ProtectedRoute({
   const [status, setStatus] = useState<Status>('checking')
   const location = useLocation()
 
-  // 🚫 Skip guard for auth-loading
+  // Skip guard for auth-loading
   if (location.pathname === '/auth-loading') {
     return children
   }
@@ -22,7 +22,7 @@ export default function ProtectedRoute({
   useEffect(() => {
     let mounted = true
 
-    const checkAuthAndProfile = async () => {
+    const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!mounted) return
 
@@ -31,34 +31,20 @@ export default function ProtectedRoute({
         return
       }
 
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle()
-
-      if (error) {
-        console.error('Error fetching profile:', error)
-        setStatus('guest')
-        return
-      }
-
-      if (!profile) {
-        setStatus('needsProfile')
-      } else {
-        setStatus('ready')
-      }
+      // User is authenticated - no profile check needed
+      // Direct access to TX dashboard after Supabase authentication
+      setStatus('ready')
     }
 
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (!session?.user) {
         setStatus('guest')
       } else {
-        checkAuthAndProfile()
+        setStatus('ready')
       }
     })
 
-    checkAuthAndProfile()
+    checkAuth()
 
     return () => {
       mounted = false
@@ -76,11 +62,8 @@ export default function ProtectedRoute({
     return allowGuests ? children : <Navigate to="/auth" replace />
   }
 
-  if (status === 'needsProfile' && location.pathname !== '/welcome') {
-    return <Navigate to="/welcome" replace />
-  }
-
   if (status === 'ready') {
+    // Redirect away from auth pages when authenticated
     if (location.pathname === '/auth' || location.pathname === '/welcome') {
       return <Navigate to="/tx-dashboard" replace />
     }

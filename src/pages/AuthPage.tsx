@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { supabase } from '@/integrations/supabase/client'
-import { saveProfile } from '@/lib/saveProfile'
+
 export default function AuthPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -16,7 +16,7 @@ export default function AuthPage() {
       if (!mounted) return
 
       if (session?.user) {
-        await handleProfileSave(session.user)
+        // User is already authenticated - go directly to TX dashboard
         navigate('/tx-dashboard', { replace: true })
       }
 
@@ -25,7 +25,8 @@ export default function AuthPage() {
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        await handleProfileSave(session.user)
+        // User signed in - go directly to TX dashboard
+        // No profile creation needed
         navigate('/tx-dashboard', { replace: true })
       }
     })
@@ -36,20 +37,6 @@ export default function AuthPage() {
       sub.subscription.unsubscribe()
     }
   }, [navigate])
-
-  const handleProfileSave = async (user: any) => {
-    const payload = {
-      id: user.id,
-      name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-      email: user.email || '',
-      mode: "demo" as const // or 'broker' depending on your onboarding logic
-    }
-
-    const result = await saveProfile(payload)
-    if (!result.success) {
-      console.error('❌ Profile save failed:', result.error)
-    }
-  }
 
   if (loading) return null
 
@@ -83,7 +70,7 @@ export default function AuthPage() {
         }}
         providers={['github', 'discord']}
         magicLink
-        redirectTo={window.location.origin + '/auth-loading'} // <-- now goes to auth-loading
+        redirectTo={window.location.origin + '/auth-loading'}
       />
     </div>
   )

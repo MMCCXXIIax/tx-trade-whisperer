@@ -18,18 +18,9 @@ export default function AuthLoading() {
         return
       }
 
-      // Check profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle()
-
-      if (!profile) {
-        navigate('/welcome', { replace: true })
-      } else {
-        navigate('/tx-dashboard', { replace: true })
-      }
+      // User is authenticated - go directly to TX dashboard
+      // No profile check needed anymore
+      navigate('/tx-dashboard', { replace: true })
     }
 
     routeUser()

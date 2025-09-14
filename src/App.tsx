@@ -2,7 +2,6 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/AuthPage'
-import Welcome from '@/pages/Welcome'
 import TXMainDashboard from '@/components/TXMainDashboard';
 import SettingsPage from '@/components/SettingsPage';
 import NotFoundPage from '@/pages/NotFound'
@@ -21,10 +20,7 @@ export default function App() {
           {/* Public post-OAuth session hydration page */}
           <Route path="/auth-loading" element={<AuthLoading />} />
 
-          {/* Onboarding */}
-          <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
-
-          {/* Main dashboard */}
+          {/* Main dashboard - no onboarding needed */}
           <Route path="/tx-dashboard" element={<ProtectedRoute><TXMainDashboard /></ProtectedRoute>} />
 
           {/* Settings */}
