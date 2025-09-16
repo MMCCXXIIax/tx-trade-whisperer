@@ -16,14 +16,13 @@ interface UseCandlesOptions {
   pollMs?: number; // default 15000
 }
 
-function toNumber(n: any): number {
-  const v = typeof n === 'string' ? parseFloat(n) : Number(n);
+function toNumber(n: unknown): number {
+  const v = typeof n === 'string' ? parseFloat(n) : Number(n as number);
   return Number.isFinite(v) ? v : 0;
 }
 
-function toSeconds(t: any): number {
+function toSeconds(t: unknown): number {
   if (!t && t !== 0) return Math.floor(Date.now() / 1000);
-  // array index case handled before call
   if (typeof t === 'number') {
     // assume ms if too large
     return t > 1e12 ? Math.floor(t / 1000) : (t > 1e10 ? Math.floor(t / 1000) : t);
@@ -32,7 +31,9 @@ function toSeconds(t: any): number {
   return Math.floor(d.getTime() / 1000);
 }
 
-function mapItem(it: any): Candle | null {
+type CandleLike = [unknown, unknown, unknown, unknown, unknown] | Record<string, unknown>;
+
+function mapItem(it: CandleLike): Candle | null {
   // Supports array [t, o, h, l, c] or object with keys
   if (Array.isArray(it)) {
     const [t, o, h, l, c] = it;
@@ -45,11 +46,12 @@ function mapItem(it: any): Candle | null {
     };
   }
   if (it && typeof it === 'object') {
-    const timeVal = it.t ?? it.time ?? it.timestamp;
-    const o = it.o ?? it.open;
-    const h = it.h ?? it.high;
-    const l = it.l ?? it.low;
-    const c = it.c ?? it.close;
+    const obj = it as Record<string, unknown>;
+    const timeVal = obj.t ?? obj.time ?? obj.timestamp;
+    const o = (obj as Record<string, unknown>).o ?? obj.open;
+    const h = (obj as Record<string, unknown>).h ?? obj.high;
+    const l = (obj as Record<string, unknown>).l ?? obj.low;
+    const c = (obj as Record<string, unknown>).c ?? obj.close;
     if ([o, h, l, c].some(v => v === undefined || v === null)) return null;
     return {
       time: toSeconds(timeVal),
@@ -91,8 +93,8 @@ export function useCandles({ apiBase, symbol, interval = '1m', limit = 200, poll
         const mapped: Candle[] = arr.map(mapItem).filter(Boolean) as Candle[];
         mapped.sort((a, b) => a.time - b.time);
         if (active) setCandles(mapped);
-      } catch (e: any) {
-        if (active) setError(e?.message || 'Failed to load candles');
+      } catch (e: unknown) {
+        if (active) setError((e as Error)?.message || 'Failed to load candles');
       } finally {
         if (active) setLoading(false);
       }

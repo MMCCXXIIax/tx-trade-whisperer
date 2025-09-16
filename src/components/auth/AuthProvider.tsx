@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string) => Promise<any>;
-  signOut: () => Promise<any>;
+  signIn: (email: string, password: string) => Promise<{ data: unknown; error: unknown }>;
+  signUp: (email: string, password: string) => Promise<{ data: unknown; error: unknown }>;
+  signOut: () => Promise<{ error: unknown }>;
 }
 
 const AuthContext = createContext<AuthContextType>({

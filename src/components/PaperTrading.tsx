@@ -81,12 +81,24 @@ const PaperTrading: React.FC = () => {
     try {
       const response = await apiClient.getPaperPortfolio();
       if (response && response.data) {
-        const portfolio = response.data;
-        if (portfolio.positions) {
-          setPaperTrades(portfolio.positions);
-        } else if (Array.isArray(portfolio)) {
-          // Handle direct array response
-          setPaperTrades(portfolio);
+        const data = response.data as any;
+        // Flask returns { positions: { [symbol]: { quantity, avg_entry, ... } } }
+        if (data.positions && !Array.isArray(data.positions)) {
+          const mapped: PaperTrade[] = Object.entries(data.positions).map(([sym, pos]: any, idx) => ({
+            id: idx + 1,
+            symbol: sym,
+            action: (pos.quantity ?? 0) >= 0 ? 'BUY' : 'SELL',
+            entry_price: String(pos.avg_entry ?? pos.price ?? 0),
+            quantity: Math.abs(pos.quantity ?? 0),
+            pnl: pos.pnl ?? 0,
+            status: 'open',
+            timestamp: String(pos.last_update ?? new Date().toISOString()),
+            pattern: pos.pattern,
+            confidence: typeof pos.confidence === 'number' ? `${(pos.confidence * 100).toFixed(0)}%` : pos.confidence,
+          }));
+          setPaperTrades(mapped);
+        } else if (Array.isArray(data.positions)) {
+          setPaperTrades(data.positions);
         }
       }
     } catch (error) {
@@ -100,24 +112,28 @@ const PaperTrading: React.FC = () => {
     try {
       const response = await apiClient.getPaperPortfolio();
       if (response && response.data) {
-        const portfolio = response.data;
-        if (portfolio.balance !== undefined) {
-          // Backend returned portfolio with stats
-          setTradingStats({
-            total_balance: portfolio.balance || 100000,
-            total_pnl: portfolio.pnl || 0,
-            win_rate: portfolio.win_rate || 0,
-            total_trades: portfolio.total_trades || paperTrades.length,
-            open_positions: portfolio.positions?.filter(p => p.status === 'open').length || 0,
-            best_trade: portfolio.best_trade || 0,
-            worst_trade: portfolio.worst_trade || 0,
-            avg_trade: portfolio.avg_trade || 0
-          });
-        } else {
-          // If no stats in portfolio response, calculate from trades
-          const stats = calculateStatsFromTrades(paperTrades);
-          setTradingStats(stats);
-        }
+        const data = response.data as any;
+        // If backend provides stats in trading-stats endpoint, prefer that
+        try {
+          const statsRes = await apiClient.getPortfolioMetrics();
+          if (statsRes && statsRes.data) {
+            const s: any = statsRes.data;
+            setTradingStats({
+              total_balance: s.total_balance ?? 100000,
+              total_pnl: s.total_pnl ?? 0,
+              win_rate: s.win_rate ?? 0,
+              total_trades: s.total_trades ?? paperTrades.length,
+              open_positions: s.open_positions ?? 0,
+              best_trade: s.best_trade ?? 0,
+              worst_trade: s.worst_trade ?? 0,
+              avg_trade: s.avg_trade ?? 0,
+            });
+            return;
+          }
+        } catch {}
+        // Fallback: derive from positions map
+        const derived = calculateStatsFromTrades(paperTrades);
+        setTradingStats(derived);
       }
     } catch (error) {
       console.error('Failed to fetch trading stats:', error);
@@ -146,7 +162,7 @@ const PaperTrading: React.FC = () => {
         })
       );
       
-      if (result.success) {
+      if (result) {
         toast({ title: 'Trade Placed', description: `${action} ${quantity} ${symbol.toUpperCase()} @ $${price}` });
         setSymbol('');
         setQuantity('');
@@ -178,7 +194,7 @@ const PaperTrading: React.FC = () => {
         apiClient.closePaperTrade(trade.id)
       );
       
-      if (result.success) {
+      if (result) {
         toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
         fetchPaperTrades();
         fetchTradingStats();

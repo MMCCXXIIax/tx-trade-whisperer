@@ -11,8 +11,11 @@ const getApiBase = () => {
   const apiBase = envApiBase || defaultApiBase;
   
   try {
-    new URL(apiBase);
-    return apiBase;
+    const url = new URL(apiBase);
+    // Ensure no trailing slash to avoid double slashes in fetch/io URLs
+    const clean = url.origin + (url.pathname.replace(/\/$/, ''));
+    console.log("Using API base URL:", clean);
+    return clean;
   } catch {
     console.warn("Invalid API_BASE URL, using default");
     return defaultApiBase;
@@ -52,7 +55,7 @@ export async function safeFetch<T>(
           ...options.headers,
         },
         mode: 'cors', // Explicitly set CORS mode
-        credentials: 'omit', // Don't send cookies for API calls
+        credentials: 'omit', // Avoid cookies for cross-origin Render
       });
 
       if (!response.ok) {
@@ -61,18 +64,26 @@ export async function safeFetch<T>(
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error(`API call failed (attempt ${attempt + 1}) to ${url}:`, error);
       
       if (attempt === retries) {
         // Show more specific error message based on error type
         const isNetworkError = error instanceof TypeError && error.message.includes('fetch');
+        const isCorsError = error instanceof TypeError && error.message.includes('CORS');
+        
+        let errorMessage = "Unable to connect to server. Please try again.";
+        if (isNetworkError) {
+          errorMessage = "Backend server appears to be down. Please check if your server is running.";
+        } else if (isCorsError) {
+          errorMessage = "Cross-origin request blocked. Please check CORS configuration on the server.";
+        }
+        
         toast({
           title: "Connection Error",
-          description: isNetworkError 
-            ? "Backend server appears to be down. Please check if your server is running."
-            : "Unable to connect to server. Please try again.",
+          description: errorMessage,
           variant: "destructive"
         });
         return null;

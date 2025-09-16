@@ -17,7 +17,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { txApi } from '@/lib/txApi';
+import { apiClient, socketHandlers } from '@/lib/apiClient';
 
 interface AlertData {
   symbol: string;
@@ -48,60 +48,77 @@ export function TXOverviewDashboard() {
   });
 
   useEffect(() => {
-    // Load initial data
+    // Initial load
     loadAlerts();
     loadMarketData();
-    
-    // Set up polling for real-time updates
+
+    // Realtime updates via sockets
+    const offAlert = socketHandlers.onNewAlert((a:any) => {
+      setAlerts(prev => [{
+        symbol: a.symbol || a.ticker || 'N/A',
+        pattern: a.pattern || a.type || 'Pattern',
+        confidence: `${Math.round((a.confidence ?? 0) as number)}%`,
+        price: typeof a.price === 'number' ? `$${a.price.toLocaleString()}` : String(a.price ?? ''),
+        time: new Date().toLocaleTimeString()
+      }, ...prev].slice(0, 20));
+    });
+
+    const offMarket = socketHandlers.onMarketUpdate((markets:any) => {
+      const mapped = Object.entries(markets || {}).map(([symbol, v]: any) => ({
+        symbol,
+        price: Number(v?.price) || 0,
+        change: Number(v?.change_24h) || 0,
+        status: 'active'
+      }));
+      setMarketData(mapped);
+      setScanStatus({ active: true, lastScan: new Date() });
+    });
+
+    // Poll every 30s as fallback
     const interval = setInterval(() => {
       loadAlerts();
       loadMarketData();
-    }, 30000); // 30 seconds
+    }, 30000);
 
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); offAlert?.(); offMarket?.(); };
   }, []);
 
   const loadAlerts = async () => {
     try {
-      // Mock alerts for demo
-      const mockAlerts: AlertData[] = [
-        {
-          symbol: 'BTC',
-          pattern: 'Bullish Engulfing',
-          confidence: '89%',
-          price: '$95,432',
-          time: new Date().toLocaleTimeString()
-        }
-      ];
-      setAlerts(mockAlerts);
+      const res = await apiClient.getActiveAlerts();
+      if (res?.data?.alerts) {
+        const mapped = res.data.alerts.map((a:any) => ({
+          symbol: a.symbol || a.ticker || 'N/A',
+          pattern: a.pattern || a.type || 'Pattern',
+          confidence: `${Math.round((a.confidence ?? 0) as number)}%`,
+          price: typeof a.price === 'number' ? `$${a.price.toLocaleString()}` : String(a.price ?? ''),
+          time: new Date(a.timestamp || Date.now()).toLocaleTimeString()
+        }));
+        setAlerts(mapped);
+      } else {
+        setAlerts([]);
+      }
     } catch (error) {
       console.error('Failed to load alerts:', error);
+      setAlerts([]);
     }
   };
 
   const loadMarketData = async () => {
     try {
-      const response = await txApi.getSupportedAssets();
-      if (response.data) {
-        const data = [
-          { symbol: 'bitcoin', price: 95432, change: 2.3, status: 'active' },
-          { symbol: 'ethereum', price: 3240, change: 1.8, status: 'active' },
-          { symbol: 'solana', price: 185, change: -0.5, status: 'active' }
-        ];
-        const mockData = data.map((result: any) => ({
-          symbol: result.symbol,
-          price: result.price || 0,
-          change: Math.random() * 4 - 2,
-          status: result.status
-        }));
-        setMarketData(mockData);
-        setScanStatus({
-          active: true,
-          lastScan: new Date()
-        });
-      }
+      const scan = await apiClient.getMarketScan();
+      const results = scan?.data?.last_scan?.results || [];
+      const mapped = (Array.isArray(results) ? results : []).map((r:any) => ({
+        symbol: r.symbol || r.ticker,
+        price: Number(String(r.price).replace(/[^0-9.-]+/g, '')) || 0,
+        change: Number(r.change_24h ?? 0),
+        status: 'active'
+      }));
+      setMarketData(mapped);
+      setScanStatus({ active: true, lastScan: new Date() });
     } catch (error) {
       console.error('Failed to load market data:', error);
+      setMarketData([]);
     }
   };
 

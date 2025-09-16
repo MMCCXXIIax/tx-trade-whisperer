@@ -76,10 +76,27 @@ const PerformanceTracking: React.FC = () => {
             setPerformanceData(performanceMetrics);
           } else {
             // Try to get performance data from analytics endpoint
-            const analyticsResponse = await apiClient.getPerformanceMetrics();
+            const analyticsResponse = await apiClient.getAnalyticsSummary();
             
             if (analyticsResponse && analyticsResponse.data) {
-              setPerformanceData(analyticsResponse.data);
+              const a: any = analyticsResponse.data;
+              // Normalize to PerformanceData shape
+              setPerformanceData({
+                win_rate: a.win_rate ?? 0,
+                profit_factor: a.profit_factor ?? 0,
+                sharpe_ratio: a.sharpe_ratio ?? 0,
+                total_return: a.total_return ?? 0,
+                max_drawdown: a.max_drawdown ?? 0,
+                total_trades: a.total_trades ?? 0,
+                winning_trades: a.winning_trades ?? 0,
+                losing_trades: a.losing_trades ?? 0,
+                avg_win_size: a.avg_win_size ?? 0,
+                avg_loss_size: a.avg_loss_size ?? 0,
+                avg_hold_time: a.avg_hold_time ?? 0,
+                performance_by_pattern: a.performance_by_pattern ?? [],
+                performance_by_timeframe: a.performance_by_timeframe ?? [],
+                monthly_performance: a.monthly_performance ?? [],
+              });
             } else {
               // Create mock data if no real data available
               createMockPerformanceData();

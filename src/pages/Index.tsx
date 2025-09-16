@@ -118,7 +118,7 @@ const PerformancePage = () => (
   </Card>
 );
 
-const SettingsPage = ({ userData }: { userData: any }) => (
+const SettingsPage = ({ userData }: { userData: Record<string, unknown> }) => (
   <Card className="terminal-container">
     <CardHeader>
       <CardTitle className="text-tx-green flex items-center gap-2">

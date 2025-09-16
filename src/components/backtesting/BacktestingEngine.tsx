@@ -7,7 +7,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Area, AreaChart } from 'recharts';
 import { TrendingUp, TrendingDown, Target, BarChart3, Zap, Shield, DollarSign, Calendar, Play, Pause, RotateCcw } from 'lucide-react';
-import { txApi, BacktestResult, Strategy } from '@/lib/txApi';
+import { apiClient } from '@/lib/apiClient';
+
+interface Strategy {
+  id?: string;
+  name: string;
+  description: string;
+  patterns: string[];
+  conditions: any[];
+  isActive: boolean;
+}
+
+interface BacktestResult {
+  pattern: string;
+  symbol: string;
+  startDate: string;
+  endDate: string;
+  totalTrades: number;
+  winRate: number;
+  profitFactor: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
+  totalReturn: number;
+  avgReturn: number;
+}
 
 interface BacktestConfig {
   pattern: string;
@@ -70,9 +93,9 @@ export default function BacktestingEngine() {
   useEffect(() => {
     // Load strategy templates
     const loadStrategies = async () => {
-      const response = await txApi.getStrategyTemplates();
-      if (response.success) {
-        setStrategies(response.data);
+      const response = await apiClient.getStrategies();
+      if (response && response.data) {
+        setStrategies(response.data as unknown as Strategy[]);
       } else {
         // Mock strategy templates
         const mockStrategies: Strategy[] = [
@@ -134,17 +157,16 @@ export default function BacktestingEngine() {
 
     try {
       // Try to use real API first
-      const response = await txApi.backtestPattern(
-        config.pattern, 
-        config.symbol, 
-        config.startDate, 
-        config.endDate
-      );
+      const response = await apiClient.backtestPattern({
+        pattern: config.pattern,
+        symbol: config.symbol,
+        days: undefined,
+      });
 
       setProgress(100);
       
-      if (response.success) {
-        setResults(response.data);
+      if (response && response.data) {
+        setResults(response.data as unknown as BacktestResult);
       } else {
         // Generate mock results for demonstration
         const mockResult: BacktestResult = {
@@ -204,10 +226,10 @@ export default function BacktestingEngine() {
     setIsRunning(true);
     
     try {
-      const response = await txApi.backtestStrategy(strategy.id);
+      const response = await apiClient.backtestStrategy({ strategyId: strategy.id });
       
-      if (response.success) {
-        setResults(response.data);
+      if (response && response.data) {
+        setResults(response.data as unknown as BacktestResult);
       } else {
         // Mock strategy backtest result
         const mockResult: BacktestResult = {

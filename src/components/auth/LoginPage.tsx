@@ -31,7 +31,7 @@ export default function LoginPage() {
       } else if (mode === 'signup') {
         setError('Check your email for the confirmation link!');
       }
-    } catch (err: any) {
+    } catch (_err) {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

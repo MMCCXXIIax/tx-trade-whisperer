@@ -43,10 +43,12 @@ interface LastSignal {
 }
 
 interface AppState {
-  last_scan: ScanData;
-  alerts: Alert[];
-  paper_trades: any[];
-  last_signal: LastSignal | null;
+  last_scan?: ScanData | { results?: Array<Record<string, unknown>> };
+  alerts?: Alert[];
+  paper_trades?: Array<Record<string, unknown>>;
+  last_signal?: LastSignal | null;
+  market_data?: unknown;
+  [key: string]: unknown;
 }
 
 
@@ -62,8 +64,8 @@ const TXDashboard: React.FC = () => {
   const [scanningActive, setScanningActive] = useState(false);
   
   const alertAudioRef = useRef<HTMLAudioElement>(null);
-  const refreshIntervalRef = useRef<NodeJS.Timeout>();
-  const countdownIntervalRef = useRef<NodeJS.Timeout>();
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval>>();
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval>>();
 
   const txPersonalities = [
     "I told you to watch this one! 👀",
@@ -142,9 +144,9 @@ const TXDashboard: React.FC = () => {
       setIsLoading(true);
       // Use the new API client
       const response = await safeApiCall(apiClient.getMarketScan());
-      if (response.success && response.data) {
-        console.log('Scan data received:', response.data);
-        setAppState(response.data);
+      if (response && (response as any).data) {
+        console.log('Scan data received:', (response as any).data);
+        setAppState((response as any).data);
       } else {
         console.warn('No scan data received from backend');
       }
@@ -163,11 +165,12 @@ const TXDashboard: React.FC = () => {
   // Check for active alerts
   const checkForAlerts = async () => {
     try {
-      // Use the new API client
-      const response = await safeApiCall(apiClient.getRecentAlerts(1));
-      if (response.success && response.data && response.data.length > 0 && !activeAlert) {
+      // Use the new API client (active alerts)
+      const response = await safeApiCall(apiClient.getActiveAlerts);
+      const alerts = (response && (response as any).alerts) || (response && (response as any).data?.alerts);
+      if (alerts && alerts.length > 0 && !activeAlert) {
         // Convert API alert format to component format
-        const apiAlert = response.data[0];
+        const apiAlert = alerts[0];
         const formattedAlert: Alert = {
           symbol: apiAlert.symbol,
           pattern: apiAlert.pattern,
@@ -251,33 +254,19 @@ const TXDashboard: React.FC = () => {
   const logOutcome = async (outcome: string) => {
     try {
       // Get latest detection ID
-      const detectionResponse = await safeApiCall(apiClient.getLatestDetectionId());
+      const detectionResponse = await safeApiCall(apiClient.getLatestDetectionId);
+      const detectionId = (detectionResponse && (detectionResponse as any).detection_id) || (detectionResponse as any)?.data?.detection_id;
       
-      if (detectionResponse.success && detectionResponse.data && detectionResponse.data.detection_id) {
-        const result = await safeApiCall(apiClient.logTradeOutcome({
-          detection_id: detectionResponse.data.detection_id,
-          outcome: outcome
-        }));
-        
-        if (result.success) {
-          toast({
-            title: "Outcome Logged",
-            description: "Thank you for the feedback!",
-          });
-        }
-      } else {
-        // If no detection ID is available, send outcome with placeholder
-        const result = await safeApiCall(apiClient.logTradeOutcome({
-          detection_id: 'latest', // Special value that backend can interpret
-          outcome: outcome
-        }));
-        
-        if (result.success) {
-          toast({
-            title: "Outcome Logged",
-            description: "Thank you for the feedback!",
-          });
-        }
+      const result = await safeApiCall(() => apiClient.logOutcome({
+        detection_id: detectionId || 'latest',
+        outcome: outcome as 'profitable' | 'loss'
+      }));
+      
+      if (result) {
+        toast({
+          title: "Outcome Logged",
+          description: "Thank you for the feedback!",
+        });
       }
     } catch (error) {
       console.error('Failed to log outcome:', error);
@@ -292,15 +281,13 @@ const TXDashboard: React.FC = () => {
   // Live scanning controls
   const startScanning = async () => {
     try {
-      // Use the new API client
-      const response = await safeApiCall(apiClient.startScanner());
-      if (response.success) {
-        setScanningActive(true);
-        toast({
-          title: "Scanning Started",
-          description: "Live market scanning is now active",
-        });
-      }
+      // Manual scan trigger aligns with GET /api/scan; here we just fetch latest scan
+      await fetchScanData();
+      setScanningActive(true);
+      toast({
+        title: "Scan Fetched",
+        description: "Latest market scan retrieved",
+      });
     } catch (error) {
       console.error('Failed to start scanning:', error);
       toast({
@@ -313,15 +300,12 @@ const TXDashboard: React.FC = () => {
 
   const stopScanning = async () => {
     try {
-      // Use the new API client
-      const response = await safeApiCall(apiClient.stopScanner());
-      if (response.success) {
-        setScanningActive(false);
-        toast({
-          title: "Scanning Stopped",
-          description: "Live market scanning has been paused",
-        });
-      }
+      // No explicit stop endpoint in backend list; just update UI state
+      setScanningActive(false);
+      toast({
+        title: "Scan Paused",
+        description: "Live market scanning paused on frontend",
+      });
     } catch (error) {
       console.error('Failed to stop scanning:', error);
       toast({
@@ -334,11 +318,8 @@ const TXDashboard: React.FC = () => {
 
   const checkScanStatus = async () => {
     try {
-      // Use the new API client
-      const response = await safeApiCall(apiClient.getScannerStatus());
-      if (response.success && response.data) {
-        setScanningActive(response.data.status === 'running');
-      }
+      // No /api/scan/status in backend list; set based on whether we have data
+      setScanningActive(Boolean(appState?.last_scan));
     } catch (error) {
       console.error('Failed to check scan status:', error);
     }

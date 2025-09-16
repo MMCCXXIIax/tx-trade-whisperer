@@ -22,7 +22,7 @@ export enum ConnectionState {
 }
 
 // Event listener type
-type EventListener = (data: any) => void;
+type EventListener = (data: unknown) => void;
 
 class SocketService {
   private socket: Socket | null = null;
@@ -31,9 +31,9 @@ class SocketService {
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
   private stateListeners: ((state: ConnectionState) => void)[] = [];
   private eventListeners: Map<string, Set<EventListener>> = new Map();
-  private reconnectTimer: NodeJS.Timeout | null = null;
-  private pingInterval: NodeJS.Timeout | null = null;
-  private connectionTimeout: NodeJS.Timeout | null = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private connectionTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Connect to WebSocket server
@@ -70,6 +70,7 @@ class SocketService {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       forceNew: true,
+      path: '/socket.io', // Socket.IO default path compatible with Flask-SocketIO on Render
     });
 
     // Set up event handlers

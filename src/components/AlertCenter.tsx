@@ -71,14 +71,9 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlerts = async () => {
     try {
-      const data = await safeFetch<{ alerts: Alert[] }>('/api/alerts/recent?limit=100');
-      if (data) {
-        if (data.alerts) {
-          setAlerts(data.alerts || []);
-        } else if (Array.isArray(data)) {
-          setAlerts(data);
-        }
-      }
+      const res = await safeApiCall(apiClient.getActiveAlerts);
+      const list = (res && (res as any).alerts) || (res && (res as any).data?.alerts) || [];
+      setAlerts(list as Alert[]);
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
     } finally {
@@ -88,19 +83,12 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlertStats = async () => {
     try {
-      const data = await safeFetch<AlertStats>('/api/alerts/stats');
-      if (data) {
-        setAlertStats(data);
-      } else {
-        // If no stats endpoint, calculate from alerts
-        const calculatedStats = calculateAlertStats(alerts);
-        setAlertStats(calculatedStats);
-      }
-    } catch (error) {
-      console.error('Failed to fetch alert stats:', error);
-      // Fallback to calculated stats
+      // No backend stats endpoint specified; compute from alerts
       const calculatedStats = calculateAlertStats(alerts);
       setAlertStats(calculatedStats);
+    } catch (error) {
+      console.error('Failed to compute alert stats:', error);
+      setAlertStats(null);
     }
   };
 

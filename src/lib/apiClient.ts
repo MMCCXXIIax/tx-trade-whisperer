@@ -37,7 +37,7 @@ export interface BacktestResult {
   sharpe_ratio: number;
   max_drawdown: number;
   profit_factor: number;
-  trades: any[];
+  trades: Array<Record<string, unknown>>;
 }
 
 export interface PatternDetection {
@@ -101,12 +101,22 @@ export interface PaperTrade {
   quantity?: number;
 }
 
+export interface PortfolioPosition {
+  symbol?: string;
+  ticker?: string;
+  quantity?: number;
+  qty?: number;
+  price?: number;
+  avg_price?: number;
+  [key: string]: unknown;
+}
+
 export interface Portfolio {
   balance: number;
-  positions: any[];
+  positions: PortfolioPosition[];
   pnl: number;
   win_rate: number;
-  trade_history: any[];
+  trade_history: Array<Record<string, unknown>>;
   // Performance metrics
   profit_factor?: number;
   sharpe_ratio?: number;
@@ -123,9 +133,17 @@ export interface Portfolio {
   monthly_performance?: Array<{month: string; return: number; trades: number}>;
 }
 
+export interface StrategyCondition {
+  id?: string;
+  type?: string;
+  operator?: string;
+  value?: string | number;
+  logicOperator?: 'AND' | 'OR';
+}
+
 export interface Strategy {
   name: string;
-  conditions: any[];
+  conditions: StrategyCondition[];
 }
 
 export interface TimeframeConsensus {
@@ -229,46 +247,85 @@ class ApiClient {
 
   // Profile methods
   async getProfile(id: string) {
-    return this.request<any>(`/profiles/${id}`);
+    return this.request<{ id: string; email?: string; name?: string }>(`/profiles/${id}`);
   }
 
-  async createProfile(profileData: any) {
-    return this.request<any>('/profiles', {
+  async createProfile(profileData: { email: string; name?: string }) {
+    return this.request<{ id: string; email: string; name?: string }>('/profiles', {
       method: 'POST',
       body: JSON.stringify(profileData)
     });
   }
 
-  // Health check
+  // Health check (outside /api prefix)
   async healthCheck() {
-    return this.request<{ status: string; timestamp: string }>('/health');
+    try {
+      const response = await fetch(`${API_BASE}/health`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Health check failed:', error);
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' } as unknown as ApiResponse<{ status: string; timestamp: string }>;
+    }
   }
 
-  // 1. Alert System
-  async getRecentAlerts(limit = 20) {
-    return this.request<Alert[]>(`/alerts/recent?limit=${limit}`);
+  // 1. Alerts
+  async getActiveAlerts() {
+    return this.request<{ alerts: Alert[] }>(`/get_active_alerts`);
   }
 
-  // 2. Backtesting Engine
-  async runBacktest(params: BacktestParams) {
-    return this.request<BacktestResult>('/backtest/run', {
+  async handleAlertResponse(payload: { alert_id?: string; action: 'BUY' | 'SELL' | 'IGNORE' }) {
+    return this.request<{ status: string }>(`/handle_alert_response`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async getLatestDetectionId() {
+    return this.request<{ detection_id: string }>(`/get_latest_detection_id`);
+  }
+
+  async logOutcome(payload: { detection_id: string; outcome: 'profitable' | 'loss' }) {
+    return this.request<{ status: string }>(`/log_outcome`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // 2. Backtesting
+  async backtestPattern(params: { pattern: string; symbol: string; days?: number }) {
+    return this.request<BacktestResult>('/backtest/pattern', {
       method: 'POST',
       body: JSON.stringify(params)
     });
   }
 
-  // 3. Candlestick Pattern Detection
-  async detectPatterns(symbol: string, timeframe = '1h') {
-    return this.request<PatternDetection[]>(`/detect/${symbol}?timeframe=${timeframe}`);
+  async backtestStrategy(params: Record<string, unknown>) {
+    return this.request('/backtest/strategy', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  // 3. Detection & Scan
+  async getCandles(symbol: string, timeframe: string) {
+    return this.request<any>(`/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}`);
   }
 
   async getMarketScan() {
-    return this.request<any>('/scan');
+    return this.request<{ last_scan?: { results?: Array<Record<string, unknown>> }; alerts?: Array<Record<string, unknown>>; paper_trades?: Array<Record<string, unknown>>; last_signal?: Record<string, unknown> }>("/scan");
   }
 
   // 4. Data Coverage
   async getAssetsList() {
-    return this.request<Asset[]>('/assets/list');
+    return this.request<Asset[]>("/assets/list");
+  }
+
+  async getPatternsList() {
+    return this.request<string[]>("/patterns/list");
   }
 
   // 5. Entry/Exit Signals
@@ -276,91 +333,152 @@ class ApiClient {
     return this.request<TradingSignal[]>('/signals/entry-exit');
   }
 
-  // 6. Feature Monitoring
-  async getScannerStatus() {
-    return this.request<ScannerStatus>('/scan/status');
-  }
-
-  async startScanner() {
-    return this.request('/scan/start', { method: 'POST' });
-  }
-
-  async stopScanner() {
-    return this.request('/scan/stop', { method: 'POST' });
-  }
-
-  // 8. Historical Analysis
-  async runHistoricalAnalysis(symbol: string, lookback_days = 90) {
-    return this.request('/backtest/run', {
+  async generateEntryExitSignals(payload: { symbol?: string; pattern?: string; timeframe?: string }) {
+    return this.request('/signals/entry-exit', {
       method: 'POST',
-      body: JSON.stringify({ symbol, lookback_days })
+      body: JSON.stringify(payload)
     });
   }
 
-  // 11. Key Performance Indicators
+  // 6. System Status
+  async getStatus() {
+    return this.request<{ status: string; details?: any }>('/status');
+  }
+
+  async getFeatures() {
+    return this.request<Record<string, boolean>>('/features');
+  }
+
+
+
+  // 11. Analytics & Stats
   async getPortfolioMetrics() {
-    return this.request<Portfolio>('/paper/portfolio');
+    return this.request<Portfolio>('/trading-stats');
   }
 
-  async getPatternStatistics() {
-    return this.request<any>('/analytics/patterns');
+  async getDetectionStats() {
+    return this.request<any>('/detection_stats');
   }
 
-  async getPerformanceMetrics() {
-    return this.request<PerformanceData>('/analytics/performance');
+  async getDetectionLogs() {
+    return this.request<any>('/detection_logs');
   }
 
-  // 14. No-Code Strategy Builder
-  async getStrategyTemplates() {
-    return this.request<any>('/strategy/list');
+  async exportDetectionLogs() {
+    return this.request<any>('/export_detection_logs');
+  }
+
+  async getAnalyticsSummary() {
+    return this.request<any>('/analytics/summary');
+  }
+
+
+
+  // 14. Strategy & Risk Management (Flask-supported)
+  async getStrategies() {
+    return this.request<Strategy[]>('/strategies');
   }
 
   async createStrategy(strategy: Strategy) {
-    return this.request('/strategy/create', {
+    return this.request('/strategies', {
       method: 'POST',
       body: JSON.stringify(strategy)
     });
   }
 
-  // 16. Paper Trading
-  async getPaperPortfolio() {
-    return this.request<Portfolio>('/paper/portfolio');
+  async getRiskSettings() {
+    return this.request<any>('/risk-settings');
   }
 
-  async executePaperTrade(trade: PaperTrade) {
-    return this.request('/paper/trade', {
+  async updateRiskSettings(payload: Record<string, unknown>) {
+    return this.request('/risk-settings', {
       method: 'POST',
-      body: JSON.stringify(trade)
+      body: JSON.stringify(payload)
     });
   }
 
-  async getPaperTradeHistory(limit = 50) {
-    return this.request<any>(`/paper/history?limit=${limit}`);
+  // 16. Paper Trading
+  async getPaperPortfolio() {
+    return this.request<any>('/paper-trades');
   }
 
-  // 19. Sentiment Analysis
+  async executePaperTrade(trade: { symbol: string; action: 'buy' | 'sell'; quantity: number; price: number; pattern?: string; confidence?: number }) {
+    return this.request('/paper-trades', {
+      method: 'POST',
+      body: JSON.stringify({
+        symbol: trade.symbol,
+        side: trade.action.toUpperCase(),
+        amount_usd: Number.isFinite(trade.price * trade.quantity) ? trade.price * trade.quantity : undefined,
+        price: trade.price,
+        quantity: trade.quantity,
+        pattern: trade.pattern,
+        confidence: trade.confidence,
+      })
+    });
+  }
+
+  async closePaperPosition(payload: { symbol?: string; trade_id?: string | number }) {
+    return this.request('/close-position', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // Removed unsupported paper history placeholder
+
+  // 19. Sentiment & AI Features
   async getSentimentData(symbol: string) {
     return this.request<SentimentData>(`/sentiment/${symbol}`);
   }
 
-  // 20. Technical Pattern Registry
-  async getPatternRegistry() {
-    return this.request<{ patterns: PatternInfo[] }>('/patterns');
+  async enhanceConfidence(payload: { symbol: string; pattern: string }) {
+    return this.request(`/sentiment/enhance-confidence`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 
-  // 22. Volume & Price Analysis
-  async getVolumeAnalysis(symbol: string) {
-    return this.request<VolumeAnalysisData>(`/volume-analysis/${symbol}`);
+  async sentimentAlertCondition(payload: { symbol: string; threshold?: number }) {
+    return this.request(`/sentiment/alert-condition`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 
-  // 24. Extended Timeframe Support
-  async getTimeframes() {
-    return this.request<any>('/timeframes');
+  async detectEnhanced(payload: Record<string, unknown>) {
+    return this.request(`/detect/enhanced`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 
-  async getMultiTimeframeAnalysis(symbol: string, timeframes: string[]) {
-    return this.request<TimeframeConsensus>(`/analyze/multi-timeframe/${symbol}?timeframes=${timeframes.join(',')}`);
+  async recommendComplete(payload: Record<string, unknown>) {
+    return this.request(`/recommend/complete`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
+
+  async getPatternExplanation(pattern_name: string) {
+    return this.request(`/explain/pattern/${encodeURIComponent(pattern_name)}`);
+  }
+
+  async explainAlert(payload: { alert_id?: string; details?: Record<string, unknown> }) {
+    return this.request(`/explain/alert`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // 20. Pattern Registry → use list endpoint
+  async getPatternList() {
+    return this.request<string[]>('/patterns/list');
+  }
+
+  // 22. Volume & Price Analysis → use candles
+  // (call getCandles for OHLC data)
+
+  // Removed unsupported timeframe/multi-timeframe analysis endpoints
 }
 
 // Socket event handlers
@@ -378,9 +496,9 @@ export const socketHandlers = {
   },
 
   // 12. Live Market Scanning
-  onScanUpdate: (callback: (scan: any) => void) => {
-    socketService.onScanUpdate(callback);
-    return () => socketService.off('scan_update', callback);
+  onScanUpdate: (callback: (scan: Record<string, unknown>) => void) => {
+    socketService.onScanUpdate(callback as (data: unknown) => void);
+    return () => socketService.off('scan_update', callback as (data: unknown) => void);
   },
 
   // Connection state
@@ -393,9 +511,9 @@ export const apiClient = new ApiClient();
 
 // Mock auth state management for migration
 class AuthManager {
-  private listeners: Array<(event: string, session: any) => void> = [];
+  private listeners: Array<(event: string, session: unknown) => void> = [];
 
-  onAuthStateChange(callback: (event: string, session: any) => void) {
+  onAuthStateChange(callback: (event: string, session: unknown) => void) {
     this.listeners.push(callback);
     return {
       data: {

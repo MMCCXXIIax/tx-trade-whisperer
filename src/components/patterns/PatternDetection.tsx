@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { TrendingUp, TrendingDown, Eye, BookOpen, Target, RefreshCw, Bell, Play } from 'lucide-react';
-import { safeFetch } from '@/lib/api';
+import { apiClient } from '@/lib/apiClient';
 
 interface Pattern {
   id: string;
@@ -43,37 +43,48 @@ export default function PatternDetection() {
   useEffect(() => {
     const fetchPatternData = async () => {
       try {
-        // Fetch detected patterns for selected asset
-        const patternsResponse = await safeFetch<{data: Pattern[]}>(`/detect/${selectedAsset}`);
-        if (patternsResponse?.data) {
-          // Transform API data to match our interface
-          const transformedPatterns = patternsResponse.data.map((p: any) => ({
-            ...p,
-            type: p.pattern.includes('Bullish') || p.pattern.includes('Morning') || p.pattern.includes('Hammer') 
-              ? 'bullish' : p.pattern.includes('Bearish') || p.pattern.includes('Evening') || p.pattern.includes('Shooting') 
-              ? 'bearish' : 'neutral',
-            name: p.pattern,
-            description: `${p.pattern} detected with ${p.confidence}% confidence`,
-            successRate: 85.0, // Default values, will be enhanced
-            riskReward: '1:2.5',
-            entryPrice: p.price * 1.005,
-            stopLoss: p.price * 0.97,
-            takeProfit: p.price * 1.08,
-            explanation: `${p.pattern} pattern detected. This is a ${p.verified ? 'verified' : 'unverified'} signal.`
-          }));
+        // Enhanced detection via Flask endpoint
+        const patternsResponse = await apiClient.detectEnhanced({ symbol: selectedAsset, timeframe });
+        const detections = Array.isArray(patternsResponse?.data) ? patternsResponse?.data : (patternsResponse?.data?.detections || []);
+        if (detections?.length) {
+          const transformedPatterns = detections.map((p: any, idx: number) => {
+            const priceNum = typeof p.price === 'number' ? p.price : parseFloat(String(p.price || '0').replace(/[^0-9.-]+/g, ''));
+            const name = p.pattern || p.name || 'Pattern';
+            return {
+              id: String(p.id ?? idx),
+              name,
+              type: /bull/i.test(name) ? 'bullish' : /bear/i.test(name) ? 'bearish' : 'neutral',
+              confidence: Math.round(p.confidence ?? p.score ?? 0),
+              symbol: p.symbol || selectedAsset,
+              price: priceNum || 0,
+              timestamp: p.timestamp || new Date().toISOString(),
+              description: p.description || `${name} detected with ${Math.round(p.confidence ?? 0)}% confidence`,
+              successRate: p.success_rate ?? 0,
+              riskReward: p.risk_reward ? String(p.risk_reward) : '—',
+              entryPrice: p.entry ?? priceNum ?? 0,
+              stopLoss: p.stop_loss ?? (priceNum ? priceNum * 0.97 : 0),
+              takeProfit: p.take_profit ?? (priceNum ? priceNum * 1.05 : 0),
+              explanation: p.explanation || p.reasoning || ''
+            } as Pattern;
+          });
           setDetectedPatterns(transformedPatterns);
+        } else {
+          setDetectedPatterns([]);
         }
 
-        // Fetch pattern statistics
-        const patternsListResponse = await safeFetch<{data: string[]}>('/patterns/list');
-        if (patternsListResponse?.data) {
-          const mockStats: PatternStats[] = patternsListResponse.data.slice(0, 5).map((pattern, index) => ({
+        // Fetch pattern list for statistics from Flask endpoint
+        const patternsListResponse = await apiClient.getPatternsList();
+        const list = (patternsListResponse?.data as string[]) || [];
+        if (list.length) {
+          const mockStats: PatternStats[] = list.slice(0, 5).map((pattern) => ({
             pattern,
-            successRate: 75 + Math.random() * 20,
-            avgReturn: (Math.random() - 0.3) * 15,
-            frequency: Math.floor(Math.random() * 30) + 5
+            successRate: 0,
+            avgReturn: 0,
+            frequency: 0
           }));
           setPatternStats(mockStats);
+        } else {
+          setPatternStats([]);
         }
       } catch (error) {
         console.error('Error fetching pattern data:', error);
@@ -87,13 +98,11 @@ export default function PatternDetection() {
 
   const handleExplainPattern = async (pattern: Pattern) => {
     try {
-      const explanation = await safeFetch<{data: any}>(`/explain/pattern/${pattern.name}`);
-      if (explanation?.data) {
-        // Update the selected pattern with detailed explanation
-        setSelectedPattern({
-          ...pattern,
-          explanation: explanation.data.explanation || pattern.explanation
-        });
+      // Use Flask endpoint: GET /api/explain/pattern/{pattern_name}
+      const explanation = await apiClient.getPatternExplanation(pattern.name);
+      const exp = (explanation as any)?.data?.explanation || (explanation as any)?.explanation;
+      if (exp) {
+        setSelectedPattern({ ...pattern, explanation: exp });
       }
     } catch (error) {
       console.error('Error fetching pattern explanation:', error);
@@ -102,14 +111,11 @@ export default function PatternDetection() {
 
   const handleTradeSignal = async (pattern: Pattern) => {
     try {
-      const signals = await safeFetch<{data: any[]}>('/signals/entry-exit');
-      if (signals?.data) {
-        // Find matching signal for this pattern
-        const matchingSignal = signals.data.find(s => s.symbol === pattern.symbol);
-        if (matchingSignal) {
-          console.log('Trade signal:', matchingSignal);
-          // Could open trading interface or show signal details
-        }
+      const signals = await apiClient.generateEntryExitSignals({ symbol: pattern.symbol, pattern: pattern.name, timeframe });
+      const arr = (signals as any)?.data || [];
+      const matchingSignal = Array.isArray(arr) ? arr.find((s:any) => (s.symbol||s.ticker) === pattern.symbol) : arr;
+      if (matchingSignal) {
+        console.log('Trade signal:', matchingSignal);
       }
     } catch (error) {
       console.error('Error fetching trade signals:', error);

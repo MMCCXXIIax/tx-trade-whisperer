@@ -5,7 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { MessageCircle, TrendingUp, TrendingDown, Activity, AlertCircle, Twitter, Globe, Hash } from 'lucide-react';
-import { txApi, SentimentData } from '@/lib/txApi';
+import { apiClient } from '@/lib/apiClient';
+
+type SentimentData = {
+  symbol: string;
+  sentiment: 'bullish' | 'bearish' | 'neutral';
+  score: number;
+  sources: { twitter: number; reddit: number; news: number };
+  volume: number;
+  trending: boolean;
+};
 
 interface SocialPost {
   id: string;
@@ -47,10 +56,10 @@ export default function SentimentAnalysis() {
     const fetchSentimentData = async () => {
       setIsLoading(true);
       try {
-        const response = await txApi.getSentiment(selectedAsset);
+        const response = await apiClient.getSentimentData(selectedAsset);
         
-        if (response.success) {
-          setSentimentData(response.data);
+        if (response && (response as any).data) {
+          setSentimentData((response as any).data as SentimentData);
         } else {
           // Mock sentiment data
           const mockSentiment: SentimentData = {

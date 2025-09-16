@@ -93,13 +93,11 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetections = async () => {
     try {
-      const data = await safeFetch<{ detections: Detection[] }>(`/api/detection/logs?days=${dateRange}`);
+      const res = await apiClient.getDetectionLogs();
+      const data = (res as any)?.data;
       if (data) {
-        if (data.detections) {
-          setDetections(data.detections || []);
-        } else if (Array.isArray(data)) {
-          setDetections(data);
-        }
+        const list = data.detections || data.logs || (Array.isArray(data) ? data : []);
+        setDetections(list);
       }
     } catch (error) {
       console.error('Failed to fetch detections:', error);
@@ -110,22 +108,17 @@ const DetectionLogs: React.FC = () => {
 
   const fetchDetectionStats = async () => {
     try {
-      const data = await safeFetch<DetectionStats>(`/api/detection/stats?days=${dateRange}`);
+      const res = await apiClient.getDetectionStats();
+      const data = (res as any)?.data;
       if (data) {
-        setDetectionStats(data);
+        setDetectionStats(data as DetectionStats);
       } else {
         // Calculate stats from detections if no stats endpoint
         if (detections && detections.length > 0) {
           const calculatedStats = calculateDetectionStats(detections);
           setDetectionStats(calculatedStats);
         } else {
-          // Initialize with empty stats if no detections available
-          setDetectionStats({
-            total_detections: 0,
-            success_rate: 0,
-            pattern_breakdown: [],
-            recent_activity: 0
-          });
+          setDetectionStats({ total_detections: 0, success_rate: 0, pattern_breakdown: [], recent_activity: 0 });
         }
       }
     } catch (error) {

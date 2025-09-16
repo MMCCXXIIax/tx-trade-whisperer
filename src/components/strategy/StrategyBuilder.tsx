@@ -11,7 +11,31 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Plus, Minus, Play, Save, Copy, Trash2, Settings, Target, TrendingUp, AlertCircle, Zap } from 'lucide-react';
-import { txApi, Strategy, BacktestResult } from '@/lib/txApi';
+import { apiClient } from '@/lib/apiClient';
+
+// Align types with apiClient Strategy
+interface Strategy {
+  id?: string;
+  name: string;
+  description: string;
+  patterns: string[];
+  conditions: any[];
+  isActive: boolean;
+}
+
+interface BacktestResult {
+  pattern: string;
+  symbol: string;
+  startDate: string;
+  endDate: string;
+  totalTrades: number;
+  winRate: number;
+  profitFactor: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
+  totalReturn: number;
+  avgReturn: number;
+}
 
 interface StrategyCondition {
   id: string;
@@ -70,9 +94,9 @@ export default function StrategyBuilder() {
 
   const loadStrategies = async () => {
     try {
-      const response = await txApi.getUserStrategies();
-      if (response.success) {
-        setStrategies(response.data);
+      const response = await apiClient.getStrategies();
+      if (response && response.data) {
+        setStrategies(response.data as unknown as Strategy[]);
       }
     } catch (error) {
       console.error('Error loading strategies:', error);
@@ -81,9 +105,9 @@ export default function StrategyBuilder() {
 
   const loadTemplates = async () => {
     try {
-      const response = await txApi.getStrategyTemplates();
-      if (response.success) {
-        setStrategies(response.data);
+      const response = await apiClient.getStrategies();
+      if (response && response.data) {
+        setStrategies(response.data as unknown as Strategy[]);
       }
       
       // Mock templates for demo
@@ -192,9 +216,9 @@ export default function StrategyBuilder() {
     };
 
     try {
-      const response = await txApi.createStrategy(newStrategy);
-      if (response.success) {
-        setStrategies([...strategies, response.data]);
+      const response = await apiClient.createStrategy(newStrategy as Strategy);
+      if ((response as any)?.data) {
+        setStrategies([...(strategies || []), (response as any).data as Strategy]);
         setStrategyName('');
         setStrategyDescription('');
         setConditions([]);
@@ -208,9 +232,9 @@ export default function StrategyBuilder() {
   const testStrategy = async (strategy: Strategy) => {
     setIsTesting(true);
     try {
-      const response = await txApi.backtestStrategy(strategy.id);
-      if (response.success) {
-        setTestResults(response.data);
+      const response = await apiClient.backtestStrategy({ strategyId: strategy.id });
+      if (response && response.data) {
+        setTestResults(response.data as unknown as BacktestResult);
       }
     } catch (error) {
       console.error('Error testing strategy:', error);

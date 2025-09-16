@@ -13,6 +13,8 @@ services:
         value: 0.0.0.0
       - key: VITE_API_BASE
         value: https://tx-predictive-intelligence.onrender.com
+        # If your Flask backend has a different Render URL, set it here
+        # e.g. https://your-flask-service.onrender.com
       - key: VITE_SUPABASE_URL
         value: https://zqrelfdmdrwwxrfoclzp.supabase.co
       - key: VITE_SUPABASE_ANON_KEY

@@ -15,7 +15,8 @@
     "db:push": "drizzle-kit push",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run typecheck && npm run lint && npm run build"
+    "validate": "npm run typecheck && npm run lint && npm run build",
+    "test-api": "curl -v https://tx-predictive-intelligence.onrender.com/api/health"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

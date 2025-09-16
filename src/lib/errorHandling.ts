@@ -20,13 +20,13 @@ export interface ErrorResponse {
   type: ErrorType;
   message: string;
   code?: number;
-  details?: any;
+  details?: unknown;
 }
 
 /**
  * Categorize error based on type and status code
  */
-export const categorizeError = (error: any, statusCode?: number): ErrorResponse => {
+export const categorizeError = (error: unknown, statusCode?: number): ErrorResponse => {
   // Network errors (no response from server)
   if (error instanceof TypeError && error.message.includes('fetch')) {
     return {
@@ -85,7 +85,7 @@ export const categorizeError = (error: any, statusCode?: number): ErrorResponse 
 /**
  * Display appropriate error toast based on error type
  */
-export const handleError = (error: any, statusCode?: number) => {
+export const handleError = (error: unknown, statusCode?: number) => {
   const errorInfo = categorizeError(error, statusCode);
   
   // Log error for debugging
@@ -154,7 +154,7 @@ export const fetchWithRetry = async <T>(
   maxRetries = 3,
   initialDelay = 1000
 ): Promise<T> => {
-  let lastError: any;
+  let lastError: unknown;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -191,7 +191,7 @@ export const fetchWithRetry = async <T>(
   
   // If we've exhausted all retries, handle the error and throw
   handleError(lastError);
-  throw lastError;
+  throw lastError as Error;
 };
 
 /**

@@ -23,7 +23,7 @@ interface PortfolioData {
   total_equity?: number;
   realized_pnl?: number;
   unrealized_pnl?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface PortfolioPanelProps {
