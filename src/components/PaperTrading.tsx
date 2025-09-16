@@ -191,7 +191,7 @@ const PaperTrading: React.FC = () => {
       }
 
       const result = await safeApiCall(
-        apiClient.closePaperTrade(trade.id)
+        apiClient.closePaperPosition({ trade_id: trade.id })
       );
       
       if (result) {

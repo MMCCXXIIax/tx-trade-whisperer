@@ -424,6 +424,7 @@ class ApiClient {
     });
   }
 
+
   // Removed unsupported paper history placeholder
 
   // 19. Sentiment & AI Features

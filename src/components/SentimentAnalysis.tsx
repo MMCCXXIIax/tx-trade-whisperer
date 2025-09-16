@@ -43,8 +43,8 @@ const SentimentAnalysis: React.FC<{ symbol: string }> = ({ symbol }) => {
         if (response && response.data) {
           setSentimentData(response.data);
         } else {
-          // Fallback: Check if sentiment data is included in pattern detection
-          const patternResponse = await apiClient.detectPatterns(symbol);
+          // Fallback: Check if sentiment data is included in enhanced detection
+          const patternResponse = await apiClient.detectEnhanced({ symbol });
           
           if (patternResponse && patternResponse.data && patternResponse.data[0]?.sentiment_score) {
             // Extract sentiment data from pattern detection response
