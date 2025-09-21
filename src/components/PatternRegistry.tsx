@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, BookOpen, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
-import { safeApiCall } from '@/lib/errorHandling';
 
 interface PatternInfo {
   name: string;

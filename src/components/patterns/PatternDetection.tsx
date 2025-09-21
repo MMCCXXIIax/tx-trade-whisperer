@@ -50,21 +50,26 @@ export default function PatternDetection() {
           const transformedPatterns = detections.map((p: any, idx: number) => {
             const priceNum = typeof p.price === 'number' ? p.price : parseFloat(String(p.price || '0').replace(/[^0-9.-]+/g, ''));
             const name = p.pattern || p.name || 'Pattern';
+            // Normalize confidence and successRate to 0–100
+            const rawConfidence = typeof p.confidence === 'number' ? p.confidence : (typeof p.score === 'number' ? p.score : 0);
+            const confidencePct = rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence);
+            const rawSuccess = typeof p.success_rate === 'number' ? p.success_rate : (typeof p.successRate === 'number' ? p.successRate : (typeof p.win_rate === 'number' ? p.win_rate : 0));
+            const successRatePct = rawSuccess <= 1 ? Math.round(rawSuccess * 100) : Math.round(rawSuccess);
             return {
               id: String(p.id ?? idx),
               name,
-              type: /bull/i.test(name) ? 'bullish' : /bear/i.test(name) ? 'bearish' : 'neutral',
-              confidence: Math.round(p.confidence ?? p.score ?? 0),
+              type: p.type && /^(bullish|bearish|neutral)$/i.test(p.type) ? (p.type.toLowerCase() as 'bullish'|'bearish'|'neutral') : (/bull/i.test(name) ? 'bullish' : /bear/i.test(name) ? 'bearish' : 'neutral'),
+              confidence: Math.max(0, Math.min(100, confidencePct)),
               symbol: p.symbol || selectedAsset,
               price: priceNum || 0,
               timestamp: p.timestamp || new Date().toISOString(),
-              description: p.description || `${name} detected with ${Math.round(p.confidence ?? 0)}% confidence`,
-              successRate: p.success_rate ?? 0,
-              riskReward: p.risk_reward ? String(p.risk_reward) : '—',
-              entryPrice: p.entry ?? priceNum ?? 0,
-              stopLoss: p.stop_loss ?? (priceNum ? priceNum * 0.97 : 0),
-              takeProfit: p.take_profit ?? (priceNum ? priceNum * 1.05 : 0),
-              explanation: p.explanation || p.reasoning || ''
+              description: p.description || `${name} detected with ${Math.max(0, Math.min(100, confidencePct))}% confidence`,
+              successRate: Math.max(0, Math.min(100, successRatePct)),
+              riskReward: p.risk_reward != null ? String(p.risk_reward) : (p.riskReward != null ? String(p.riskReward) : '—'),
+              entryPrice: p.entry ?? p.entry_price ?? priceNum ?? 0,
+              stopLoss: p.stop_loss ?? p.stopLoss ?? (priceNum ? priceNum * 0.97 : 0),
+              takeProfit: p.take_profit ?? p.takeProfit ?? (priceNum ? priceNum * 1.05 : 0),
+              explanation: p.explanation || p.reasoning || p.suggested_actions || ''
             } as Pattern;
           });
           setDetectedPatterns(transformedPatterns);

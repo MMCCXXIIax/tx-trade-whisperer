@@ -476,6 +476,10 @@ class ApiClient {
     return this.request<string[]>('/patterns/list');
   }
 
+  async getPatternRegistry() {
+    return this.request<{ patterns: PatternInfo[] }>('/patterns/registry');
+  }
+
   // 22. Volume & Price Analysis → use candles
   // (call getCandles for OHLC data)
 
