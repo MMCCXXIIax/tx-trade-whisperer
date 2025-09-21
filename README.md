@@ -1,112 +1,54 @@
-# TX – Trading Intelligence Platform
+# React + TypeScript + Vite
 
-## 📌 Overview
-**TX** is an AI‑powered trading intelligence assistant — not a financial advisor, broker, or fund manager.  
-It delivers **real‑time pattern detection**, **educational explanations**, and **actionable entry/exit signals** across crypto, stocks, and forex — while keeping the user in full control of execution and funds.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-**Tagline:** *"Your Intelligent Trading Co‑Pilot — Always in Your Hands."*
+Currently, two official plugins are available:
 
----
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## 🚀 Core Mission
-Equip traders with world‑class tools for:
-- AI‑driven candlestick pattern recognition
-- Real‑time market scanning
-- Educational breakdowns of patterns and strategies
-- Risk‑managed entry/exit signals
-- Backtesting and paper trading
-- Sentiment analysis from multiple sources
+## Expanding the ESLint configuration
 
----
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## 🏗 Architecture
-
-**Frontend:** React + TypeScript (Vite)  
-**Backend:** Express + Socket.IO  
-**Connection:**  
-- Express server serves the React frontend
-- WebSocket for instant alerts
-
----
-
-## Getting Started
-
-To run this project locally:
-
-```sh
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start the production server
-npm start
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+});
 ```
 
----
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-## 🎯 Frontend Features
+```js
+// eslint.config.js
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
 
-### Must‑Have (Beta)
-
-- Customizable Dashboard — Users can rearrange, resize, and toggle widgets (alerts, scans, sentiment, portfolio, etc.).
-- Interactive Onboarding Tutorial — A guided, clickable walkthrough for new users explaining each major feature.
-- Tooltips Everywhere — Every section, tab, and feature should have a hover/click tooltip explaining its purpose.
-- Theme Customization — Light, dark, and high‑contrast modes with persistent user preference.
-- Alert Explanation Modal (core differentiator)
-- Pattern Detection Dashboard
-- Real‑Time Alert System (WebSocket + sound)
-- Entry/Exit Signal Display
-
-### Should‑Have (v1.1)
-
-- Backtesting Interface
-- Paper Trading Dashboard
-- Sentiment Analysis Display
-- Strategy Builder
-
----
-
-## 🎨 UI/UX Guidelines
-
-### Design Philosophy: Professional Intelligence Made Simple
-
-- Clean, modern (Stripe/Linear‑style)
-- Information‑dense but not overwhelming
-- Action‑oriented with clear CTAs
-- Mobile‑first responsive design
-
-### Color Palette:
-
-- Primary: Deep Blue `#0B1426`
-- Success: Bright Green `#00D8B0`
-- Danger: Bright Red `#FF5B5B`
-- Warning: Orange `#FF8800`
-- Background: Light Gray `#F8FAFC`
-- Text: Dark Gray `#1A202C`
-
-### Typography:
-
-- Headers: Inter or Poppins
-- Body: System fonts
-- Code/Data: JetBrains Mono
-
----
-
-## 🛡 Compliance Boundaries
-- No financial advice — educational & analytical only
-- No custody of funds
-- User‑controlled execution
-- Flat‑rate SaaS pricing
-
----
-
-## 📈 Competitive Edge
-
-- AI pattern detection + sentiment + actionable signals in one platform
-- Educational explanations for every alert
-- Integrated workflow from detection → analysis → simulation
+export default tseslint.config({
+  plugins: {
+    // Add the react-x and react-dom plugins
+    "react-x": reactX,
+    "react-dom": reactDom,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended typescript rules
+    ...reactX.configs["recommended-typescript"].rules,
+    ...reactDom.configs.recommended.rules,
+  },
+});
+```

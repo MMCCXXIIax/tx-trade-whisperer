@@ -44,6 +44,13 @@ class SocketService {
       return this.socket;
     }
 
+    // Check if WebSocket should be disabled
+    if (this.shouldDisableWebSocket()) {
+      console.log('WebSocket disabled - running in fallback mode');
+      this.updateState(ConnectionState.DISCONNECTED);
+      return null;
+    }
+
     // Clear any existing reconnect timer
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -53,30 +60,45 @@ class SocketService {
     this.updateState(ConnectionState.CONNECTING);
     console.log('Connecting to Socket.IO server at:', API_BASE);
     
-    // Set connection timeout
+    // Set connection timeout - shorter for production
     this.connectionTimeout = setTimeout(() => {
       if (this.connectionState === ConnectionState.CONNECTING) {
-        console.error('Socket.IO connection timeout');
-        this.handleConnectionFailure('Connection timeout');
+        console.warn('Socket.IO connection timeout - continuing without real-time features');
+        this.handleConnectionFailure('Connection timeout', false);
       }
-    }, 15000);
+    }, 10000); // Reduced to 10 seconds
     
-    // Initialize Socket.IO connection
+    // Initialize Socket.IO connection with production-friendly settings
     this.socket = io(API_BASE, {
-      transports: ['websocket', 'polling'],
-      timeout: 20000,
+      transports: ['polling', 'websocket'], // Try polling first for better compatibility
+      timeout: 10000, // Reduced timeout
       reconnection: true,
-      reconnectionAttempts: this.maxReconnectAttempts,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 3, // Reduced attempts
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
       forceNew: true,
-      path: '/socket.io', // Socket.IO default path compatible with Flask-SocketIO on Render
+      path: '/socket.io',
+      autoConnect: true,
+      upgrade: true, // Allow transport upgrades
     });
 
     // Set up event handlers
     this.setupEventHandlers();
 
     return this.socket;
+  }
+
+  /**
+   * Check if WebSocket should be disabled based on environment
+   */
+  private shouldDisableWebSocket(): boolean {
+    // Disable WebSocket if explicitly set via environment variable
+    if (import.meta.env.VITE_DISABLE_WEBSOCKET === 'true') {
+      return true;
+    }
+    
+    // You can add more conditions here if needed
+    return false;
   }
 
   /**
@@ -99,12 +121,14 @@ class SocketService {
       // Set up ping interval to keep connection alive
       this.setupPingInterval();
       
-      // Notify user of successful connection
-      toast({
-        title: "Real-time Connection Established",
-        description: "You are now receiving live market updates",
-        duration: 3000,
-      });
+      // Only show success toast if we had previous failures
+      if (this.reconnectAttempts > 0) {
+        toast({
+          title: "Real-time Connection Restored",
+          description: "Live market updates resumed",
+          duration: 3000,
+        });
+      }
     });
 
     this.socket.on('disconnect', (reason) => {
@@ -131,7 +155,7 @@ class SocketService {
       toast({
         title: "Connection Restored",
         description: "Real-time updates resumed",
-        duration: 3000,
+        duration: 2000,
       });
     });
 
@@ -168,19 +192,25 @@ class SocketService {
   /**
    * Handle connection failure
    */
-  private handleConnectionFailure(reason: string) {
+  private handleConnectionFailure(reason: string, shouldRetry: boolean = true) {
     this.updateState(ConnectionState.ERROR);
     
-    // Schedule reconnect
-    this.scheduleReconnect();
+    // Schedule reconnect only if we should retry
+    if (shouldRetry && this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.scheduleReconnect();
+    } else {
+      // Give up and run in offline mode
+      console.log('Running in offline mode - real-time features disabled');
+      this.updateState(ConnectionState.DISCONNECTED);
+    }
     
-    // Notify user
+    // Notify user only on first failure and be less alarming
     if (this.reconnectAttempts === 0) {
       toast({
-        title: "Connection Issue",
-        description: "Having trouble connecting to real-time services. Retrying...",
-        variant: "destructive",
-        duration: 5000,
+        title: "Real-time Features Unavailable",
+        description: "App will continue to work with manual refresh for updates.",
+        variant: "default", // Less alarming than destructive
+        duration: 4000,
       });
     }
   }
@@ -193,7 +223,13 @@ class SocketService {
       clearTimeout(this.reconnectTimer);
     }
     
-    const delay = Math.min(30000, 1000 * Math.pow(1.5, this.reconnectAttempts));
+    // Don't retry if we've exceeded max attempts
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      console.log('Max reconnection attempts reached - giving up');
+      return;
+    }
+    
+    const delay = Math.min(30000, 2000 * Math.pow(1.5, this.reconnectAttempts));
     console.log(`Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts + 1})`);
     
     this.reconnectTimer = setTimeout(() => {

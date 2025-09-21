@@ -257,7 +257,9 @@ class ApiClient {
     });
   }
 
-  // Health check (outside /api prefix)
+  // === BACKEND TEAM APPROVED ENDPOINTS ===
+
+  // Health: GET /, GET /health
   async healthCheck() {
     try {
       const response = await fetch(`${API_BASE}/health`, {
@@ -272,138 +274,153 @@ class ApiClient {
     }
   }
 
-  // 1. Alerts
+  async getHealth() {
+    return this.request<{ status: string; timestamp: string }>('/health');
+  }
+
+  async getRoot() {
+    return this.request<{ status: string; message: string }>('/');
+  }
+
+  // Market data: GET /api/market-scan (type=trending|volume), GET /api/scan (alias), GET /api/stock/, GET /api/candles?symbol=...&period=...&interval=...
+  async getMarketScan(type?: 'trending' | 'volume') {
+    const params = type ? `?type=${type}` : '';
+    return this.request<{ last_scan?: { results?: Array<Record<string, unknown>> }; alerts?: Array<Record<string, unknown>>; paper_trades?: Array<Record<string, unknown>>; last_signal?: Record<string, unknown> }>(`/market-scan${params}`);
+  }
+
+  async getScan(type?: 'trending' | 'volume') {
+    const params = type ? `?type=${type}` : '';
+    return this.request<{ last_scan?: { results?: Array<Record<string, unknown>> }; alerts?: Array<Record<string, unknown>>; paper_trades?: Array<Record<string, unknown>>; last_signal?: Record<string, unknown> }>(`/scan${params}`);
+  }
+
+  async getStock() {
+    return this.request<Asset[]>('/stock/');
+  }
+
+  async getCandles(symbol: string, period?: string, interval?: string) {
+    const params = new URLSearchParams();
+    params.append('symbol', symbol);
+    if (period) params.append('period', period);
+    if (interval) params.append('interval', interval);
+    return this.request<any>(`/candles?${params.toString()}`);
+  }
+
+  // Live scanning: POST /api/scan/start, POST /api/scan/stop, GET /api/scan/status
+  async startScan() {
+    return this.request<{ status: string }>('/scan/start', {
+      method: 'POST'
+    });
+  }
+
+  async stopScan() {
+    return this.request<{ status: string }>('/scan/stop', {
+      method: 'POST'
+    });
+  }
+
+  async getScanStatus() {
+    return this.request<ScannerStatus>('/scan/status');
+  }
+
+  // Pattern detection: POST /api/detect-enhanced, POST /api/detect/enhanced, GET /api/pattern-stats, GET /api/patterns/list, GET /api/explain/pattern/<pattern_name>, POST /api/explain/alert
+  async detectEnhanced(payload: Record<string, unknown>) {
+    return this.request<PatternDetection>('/detect-enhanced', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async detectEnhancedAlt(payload: Record<string, unknown>) {
+    return this.request<PatternDetection>('/detect/enhanced', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async getPatternStats() {
+    return this.request<any[]>('/pattern-stats');
+  }
+
+  async getPatternsList() {
+    return this.request<string[]>('/patterns/list');
+  }
+
+  async getPatternExplanation(pattern_name: string) {
+    return this.request<any>(`/explain/pattern/${encodeURIComponent(pattern_name)}`);
+  }
+
+  async explainAlert(payload: { alert_id?: string; details?: Record<string, unknown> }) {
+    return this.request<any>('/explain/alert', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // Sentiment: GET /api/sentiment/, POST /api/sentiment/enhance-confidence, POST /api/sentiment/alert-condition
+  async getSentiment() {
+    return this.request<SentimentData>('/sentiment/');
+  }
+
+  async getSentimentData(symbol: string) {
+    return this.request<SentimentData>(`/sentiment/?symbol=${encodeURIComponent(symbol)}`);
+  }
+
+  async enhanceConfidence(payload: { symbol: string; pattern: string }) {
+    return this.request<any>('/sentiment/enhance-confidence', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async sentimentAlertCondition(payload: { symbol: string; threshold?: number }) {
+    return this.request<any>('/sentiment/alert-condition', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // Signals: GET /api/signals/entry-exit, POST /api/signals/entry-exit
+  async getTradingSignals() {
+    return this.request<TradingSignal[]>('/signals/entry-exit');
+  }
+
+  async generateEntryExitSignals(payload: { symbol?: string; pattern?: string; timeframe?: string }) {
+    return this.request<TradingSignal[]>('/signals/entry-exit', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // Alerts: GET /api/get_active_alerts, POST /api/alerts/dismiss/, POST /api/handle_alert_response, GET /api/get_latest_detection_id
   async getActiveAlerts() {
-    return this.request<{ alerts: Alert[] }>(`/get_active_alerts`);
+    return this.request<{ alerts: Alert[] }>('/get_active_alerts');
+  }
+
+  async dismissAlert(alertId: string) {
+    return this.request<{ status: string }>(`/alerts/dismiss/`, {
+      method: 'POST',
+      body: JSON.stringify({ alert_id: alertId })
+    });
   }
 
   async handleAlertResponse(payload: { alert_id?: string; action: 'BUY' | 'SELL' | 'IGNORE' }) {
-    return this.request<{ status: string }>(`/handle_alert_response`, {
+    return this.request<{ status: string }>('/handle_alert_response', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
   }
 
   async getLatestDetectionId() {
-    return this.request<{ detection_id: string }>(`/get_latest_detection_id`);
+    return this.request<{ detection_id: string | number }>('/get_latest_detection_id');
   }
 
-  async logOutcome(payload: { detection_id: string; outcome: 'profitable' | 'loss' }) {
-    return this.request<{ status: string }>(`/log_outcome`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  }
-
-  // 2. Backtesting
-  async backtestPattern(params: { pattern: string; symbol: string; days?: number }) {
-    return this.request<BacktestResult>('/backtest/pattern', {
-      method: 'POST',
-      body: JSON.stringify(params)
-    });
-  }
-
-  async backtestStrategy(params: Record<string, unknown>) {
-    return this.request('/backtest/strategy', {
-      method: 'POST',
-      body: JSON.stringify(params)
-    });
-  }
-
-  // 3. Detection & Scan
-  async getCandles(symbol: string, timeframe: string) {
-    return this.request<any>(`/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}`);
-  }
-
-  async getMarketScan() {
-    return this.request<{ last_scan?: { results?: Array<Record<string, unknown>> }; alerts?: Array<Record<string, unknown>>; paper_trades?: Array<Record<string, unknown>>; last_signal?: Record<string, unknown> }>("/scan");
-  }
-
-  // 4. Data Coverage
-  async getAssetsList() {
-    return this.request<Asset[]>("/assets/list");
-  }
-
-  async getPatternsList() {
-    return this.request<string[]>("/patterns/list");
-  }
-
-  // 5. Entry/Exit Signals
-  async getTradingSignals() {
-    return this.request<TradingSignal[]>('/signals/entry-exit');
-  }
-
-  async generateEntryExitSignals(payload: { symbol?: string; pattern?: string; timeframe?: string }) {
-    return this.request('/signals/entry-exit', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  }
-
-  // 6. System Status
-  async getStatus() {
-    return this.request<{ status: string; details?: any }>('/status');
-  }
-
-  async getFeatures() {
-    return this.request<Record<string, boolean>>('/features');
-  }
-
-
-
-  // 11. Analytics & Stats
-  async getPortfolioMetrics() {
-    return this.request<Portfolio>('/trading-stats');
-  }
-
-  async getDetectionStats() {
-    return this.request<any>('/detection_stats');
-  }
-
-  async getDetectionLogs() {
-    return this.request<any>('/detection_logs');
-  }
-
-  async exportDetectionLogs() {
-    return this.request<any>('/export_detection_logs');
-  }
-
-  async getAnalyticsSummary() {
-    return this.request<any>('/analytics/summary');
-  }
-
-
-
-  // 14. Strategy & Risk Management (Flask-supported)
-  async getStrategies() {
-    return this.request<Strategy[]>('/strategies');
-  }
-
-  async createStrategy(strategy: Strategy) {
-    return this.request('/strategies', {
-      method: 'POST',
-      body: JSON.stringify(strategy)
-    });
-  }
-
-  async getRiskSettings() {
-    return this.request<any>('/risk-settings');
-  }
-
-  async updateRiskSettings(payload: Record<string, unknown>) {
-    return this.request('/risk-settings', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  }
-
-  // 16. Paper Trading
+  // Paper trading: GET /api/paper-trades, POST /api/paper-trades, POST /api/close-position
   async getPaperPortfolio() {
-    return this.request<any>('/paper-trades');
+    return this.request<Portfolio>('/paper-trades');
   }
 
   async executePaperTrade(trade: { symbol: string; action: 'buy' | 'sell'; quantity: number; price: number; pattern?: string; confidence?: number }) {
-    return this.request('/paper-trades', {
+    return this.request<any>('/paper-trades', {
       method: 'POST',
       body: JSON.stringify({
         symbol: trade.symbol,
@@ -418,72 +435,137 @@ class ApiClient {
   }
 
   async closePaperPosition(payload: { symbol?: string; trade_id?: string | number }) {
-    return this.request('/close-position', {
+    return this.request<any>('/close-position', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
   }
 
-
-  // Removed unsupported paper history placeholder
-
-  // 19. Sentiment & AI Features
-  async getSentimentData(symbol: string) {
-    return this.request<SentimentData>(`/sentiment/${symbol}`);
-  }
-
-  async enhanceConfidence(payload: { symbol: string; pattern: string }) {
-    return this.request(`/sentiment/enhance-confidence`, {
+  // Backtesting: POST /api/backtest, POST /api/backtest/pattern, POST /api/backtest/strategy
+  async backtest(params: BacktestParams) {
+    return this.request<BacktestResult>('/backtest', {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(params)
     });
   }
 
-  async sentimentAlertCondition(payload: { symbol: string; threshold?: number }) {
-    return this.request(`/sentiment/alert-condition`, {
+  async backtestPattern(params: { pattern: string; symbol: string; days?: number }) {
+    return this.request<BacktestResult>('/backtest/pattern', {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(params)
     });
   }
 
-  async detectEnhanced(payload: Record<string, unknown>) {
-    return this.request(`/detect/enhanced`, {
+  async backtestStrategy(params: Record<string, unknown>) {
+    return this.request<BacktestResult>('/backtest/strategy', {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(params)
     });
   }
 
-  async recommendComplete(payload: Record<string, unknown>) {
-    return this.request(`/recommend/complete`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+  // === LEGACY METHODS FOR BACKWARD COMPATIBILITY ===
+  // These methods map to the new endpoints above or provide graceful fallbacks
+
+  async getAssetsList() {
+    return this.getStock();
   }
 
-  async getPatternExplanation(pattern_name: string) {
-    return this.request(`/explain/pattern/${encodeURIComponent(pattern_name)}`);
-  }
-
-  async explainAlert(payload: { alert_id?: string; details?: Record<string, unknown> }) {
-    return this.request(`/explain/alert`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-  }
-
-  // 20. Pattern Registry → use list endpoint
-  async getPatternList() {
-    return this.request<string[]>('/patterns/list');
+  async getPortfolioMetrics() {
+    return this.getPaperPortfolio();
   }
 
   async getPatternRegistry() {
-    return this.request<{ patterns: PatternInfo[] }>('/patterns/registry');
+    // Since there's no /patterns/registry endpoint, we'll use pattern stats
+    return this.getPatternStats().then(stats => ({
+      data: { patterns: stats || [] },
+      error: null
+    }));
   }
 
-  // 22. Volume & Price Analysis → use candles
-  // (call getCandles for OHLC data)
+  // Methods that don't exist in backend - return empty/default responses
+  async getDetectionStats() {
+    console.warn('getDetectionStats: Endpoint not available in backend');
+    return { data: [], error: null };
+  }
 
-  // Removed unsupported timeframe/multi-timeframe analysis endpoints
+  async getDetectionLogs() {
+    console.warn('getDetectionLogs: Endpoint not available in backend');
+    return { data: [], error: null };
+  }
+
+  async exportDetectionLogs() {
+    console.warn('exportDetectionLogs: Endpoint not available in backend');
+    return { data: null, error: 'Feature not available' };
+  }
+
+  async getAnalyticsSummary() {
+    console.warn('getAnalyticsSummary: Endpoint not available in backend');
+    return { data: {}, error: null };
+  }
+
+  async getStrategies() {
+    console.warn('getStrategies: Endpoint not available in backend');
+    return { data: [], error: null };
+  }
+
+  async createStrategy(strategy: Strategy) {
+    console.warn('createStrategy: Endpoint not available in backend');
+    return { data: null, error: 'Feature not available' };
+  }
+
+  async getRiskSettings() {
+    console.warn('getRiskSettings: Endpoint not available in backend');
+    return { data: {}, error: null };
+  }
+
+  async updateRiskSettings(payload: Record<string, unknown>) {
+    console.warn('updateRiskSettings: Endpoint not available in backend');
+    return { data: null, error: 'Feature not available' };
+  }
+
+  async getStatus() {
+    // Map to scan status
+    return this.getScanStatus();
+  }
+
+  async getFeatures() {
+    console.warn('getFeatures: Endpoint not available in backend');
+    return { data: {}, error: null };
+  }
+
+  async logOutcome(payload: { detection_id: string; outcome: 'profitable' | 'loss' }) {
+    console.warn('logOutcome: Endpoint not available in backend');
+    return { data: null, error: 'Feature not available' };
+  }
+
+  async recommendComplete(payload: Record<string, unknown>) {
+    console.warn('recommendComplete: Endpoint not available in backend');
+    return { data: null, error: 'Feature not available' };
+  }
+
+  // Methods that need to be mapped to existing endpoints
+  async getVolumeAnalysis(symbol: string) {
+    // Use candles endpoint for volume data
+    return this.getCandles(symbol, '1d', '1h');
+  }
+
+  async detectPatterns(symbol: string, timeframe?: string) {
+    // Use detect-enhanced endpoint
+    return this.detectEnhanced({ symbol, timeframe });
+  }
+
+  async getMultiTimeframeAnalysis(symbol: string, timeframes: string[]) {
+    // Call detect-enhanced for each timeframe
+    const results = await Promise.all(
+      timeframes.map(tf => this.detectEnhanced({ symbol, timeframe: tf }))
+    );
+    return { data: results, error: null };
+  }
+
+  async closePaperTrade(tradeId: string | number, currentPrice: number) {
+    // Map to close position
+    return this.closePaperPosition({ trade_id: tradeId });
+  }
 }
 
 // Socket event handlers
