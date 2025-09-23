@@ -52,6 +52,10 @@ outputType = "console"
 localPort = 3000
 externalPort = 3000
 
+[[ports]]
+localPort = 40955
+externalPort = 80
+
 [agent]
 integrations = ["javascript_database:1.0.0"]
 expertMode = true

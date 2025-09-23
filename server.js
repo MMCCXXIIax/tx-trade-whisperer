@@ -486,9 +486,12 @@ setInterval(() => {
   io.to('alerts').emit('pattern_alert', mockAlert);
 }, 30000);
 
-// Basic 404 handler for unknown routes
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+// Serve static files from the dist directory (built frontend)
+app.use(express.static(path.join(__dirname, 'dist')));
+
+// SPA Fallback: serve index.html for all non-API routes
+app.get(/^(?!\/api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 server.listen(port, () => {
