@@ -282,10 +282,24 @@ class ApiClient {
     return this.request<{ status: string; message: string }>('/');
   }
 
-  // Market data: GET /api/market-scan (type=trending|volume), GET /api/scan (alias), GET /api/stock/, GET /api/candles?symbol=...&period=...&interval=...
+  // Market data: GET /api/scan/status, GET /api/assets/list, GET /api/candles?symbol=...&period=...&interval=...
   async getMarketScan(type?: 'trending' | 'volume') {
-    const params = type ? `?type=${type}` : '';
-    return this.request<{ last_scan?: { results?: Array<Record<string, unknown>> }; alerts?: Array<Record<string, unknown>>; paper_trades?: Array<Record<string, unknown>>; last_signal?: Record<string, unknown> }>(`/market-scan${params}`);
+    // Map to scan status endpoint since market-scan doesn't exist
+    const scanData = await this.request<any>('/scan/status');
+    const assetData = await this.request<any>('/assets/list');
+    
+    // Format response to match expected structure
+    return {
+      data: {
+        last_scan: {
+          results: assetData?.data ? assetData.data.map((symbol: string) => ({ symbol, status: 'active' })) : []
+        },
+        alerts: [],
+        paper_trades: [],
+        last_signal: scanData?.data
+      },
+      error: scanData?.error || assetData?.error
+    };
   }
 
   async getScan(type?: 'trending' | 'volume') {
@@ -391,9 +405,9 @@ class ApiClient {
     });
   }
 
-  // Alerts: GET /api/get_active_alerts, POST /api/alerts/dismiss/, POST /api/handle_alert_response, GET /api/get_latest_detection_id
+  // Alerts: GET /api/alerts/recent, POST /api/alerts/dismiss/, POST /api/handle_alert_response, GET /api/get_latest_detection_id
   async getActiveAlerts() {
-    return this.request<{ alerts: Alert[] }>('/get_active_alerts');
+    return this.request<{ alerts: Alert[] }>('/alerts/recent');
   }
 
   async dismissAlert(alertId: string) {

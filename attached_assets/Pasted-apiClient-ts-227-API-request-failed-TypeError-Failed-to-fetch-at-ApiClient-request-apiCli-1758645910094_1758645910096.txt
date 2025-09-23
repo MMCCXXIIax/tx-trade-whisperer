@@ -1,0 +1,53 @@
+apiClient.ts:227 
+ API request failed: TypeError: Failed to fetch
+    at ApiClient.request (apiClient.ts:212:30)
+    at ApiClient.getMarketScan (apiClient.ts:288:17)
+    at loadMarketData (TXOverviewDashboard.tsx:109:36)
+    at TXOverviewDashboard.tsx:80:7
+apiClient.ts:227 
+ API request failed: TypeError: Failed to fetch
+    at ApiClient.request (apiClient.ts:212:30)
+    at ApiClient.getActiveAlerts (apiClient.ts:396:17)
+    at loadAlerts (TXOverviewDashboard.tsx:88:35)
+    at TXOverviewDashboard.tsx:79:7
+apiClient.ts:227 
+ API request failed: TypeError: Failed to fetch
+    at ApiClient.request (apiClient.ts:212:30)
+    at ApiClient.getMarketScan (apiClient.ts:288:17)
+    at loadMarketData (TXOverviewDashboard.tsx:109:36)
+    at TXOverviewDashboard.tsx:80:7
+apiClient.ts:227 
+ API request failed: TypeError: Failed to fetch
+    at ApiClient.request (apiClient.ts:212:30)
+    at ApiClient.getActiveAlerts (apiClient.ts:396:17)
+    at loadAlerts (TXOverviewDashboard.tsx:88:35)
+    at TXOverviewDashboard.tsx:79:7
+apiClient.ts:227 
+ API request failed: TypeError: Failed to fetch
+    at ApiClient.request (apiClient.ts:212:30)
+    at ApiClient.getMarketScan (apiClient.ts:288:17)
+    at loadMarketData (TXOverviewDashboard.tsx:109:36)
+    at TXOverviewDashboard.tsx:80:7
+request	@	apiClient.ts:227
+apiClient.ts:227 
+ API request failed: TypeError: Failed to fetch
+    at ApiClient.request (apiClient.ts:212:30)
+    at ApiClient.getMarketScan (apiClient.ts:288:17)
+    at loadMarketData (TXOverviewDashboard.tsx:109:36)
+    at TXOverviewDashboard.tsx:80:7
+request	@	apiClient.ts:227
+await in request		
+getMarketScan	@	apiClient.ts:288
+loadMarketData	@	TXOverviewDashboard.tsx:109
+(anonymous)	@	TXOverviewDashboard.tsx:80
+apiClient.ts:227 
+ API request failed: TypeError: Failed to fetch
+    at ApiClient.request (apiClient.ts:212:30)
+    at ApiClient.getActiveAlerts (apiClient.ts:396:17)
+    at loadAlerts (TXOverviewDashboard.tsx:88:35)
+    at TXOverviewDashboard.tsx:79:7
+request	@	apiClient.ts:227
+await in request		
+getActiveAlerts	@	apiClient.ts:396
+loadAlerts	@	TXOverviewDashboard.tsx:88
+(anonymous)	@	TXOverviewDashboard.tsx:79
