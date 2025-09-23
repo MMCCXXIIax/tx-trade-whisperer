@@ -1,0 +1,50 @@
+2025-09-23T13:05:41.920264273Z }
+2025-09-23T13:05:41.920274103Z 
+2025-09-23T13:05:41.920276663Z Node.js v22.16.0
+2025-09-23T13:05:58.557037438Z ==> Running 'npm run start'
+2025-09-23T13:05:59.652568734Z 
+2025-09-23T13:05:59.652599395Z > vite_react_shadcn_ts@1.0.0 start
+2025-09-23T13:05:59.652604125Z > node server.js
+2025-09-23T13:05:59.652606585Z 
+2025-09-23T13:06:01.66019891Z ✅ TX Trading Server running on port 5000
+2025-09-23T13:06:01.660436166Z 🔗 WebSocket available at ws://localhost:5000
+2025-09-23T13:06:06.4655021Z ==> Running 'npm run start'
+2025-09-23T13:06:07.563592041Z 
+2025-09-23T13:06:07.563620302Z > 3fb1a3937f1c322ed7484db744fd29dea4aaedaa400eb66a129790c0b63273d8@0.0.0 start
+2025-09-23T13:06:07.563625152Z > node server.js
+2025-09-23T13:06:07.563627442Z 
+2025-09-23T13:06:07.968792315Z node:internal/modules/package_json_reader:256
+2025-09-23T13:06:07.968814135Z   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-09-23T13:06:07.968818215Z         ^
+2025-09-23T13:06:07.968821155Z 
+2025-09-23T13:06:07.968825035Z Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /opt/render/project/src/server.js
+2025-09-23T13:06:07.968831046Z     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:256:9)
+2025-09-23T13:06:07.968836075Z     at packageResolve (node:internal/modules/esm/resolve:768:81)
+2025-09-23T13:06:07.968838826Z     at moduleResolve (node:internal/modules/esm/resolve:854:18)
+2025-09-23T13:06:07.968841356Z     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+2025-09-23T13:06:07.968843536Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+2025-09-23T13:06:07.968845676Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+2025-09-23T13:06:07.968847766Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+2025-09-23T13:06:07.968849756Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+2025-09-23T13:06:07.968851836Z     at ModuleJob._link (node:internal/modules/esm/module_job:137:49) {
+2025-09-23T13:06:07.968876046Z   code: 'ERR_MODULE_NOT_FOUND'
+2025-09-23T13:06:07.968883076Z }
+2025-09-23T13:06:07.968886007Z 
+2025-09-23T13:06:07.968889157Z Node.js v22.16.0
+2025-09-23T14:29:37.93643196Z ==> Deploying...
+2025-09-23T14:30:13.420709912Z ==> Running 'npm run start'
+2025-09-23T14:30:14.423920289Z 
+2025-09-23T14:30:14.42394888Z > 3fb1a3937f1c322ed7484db744fd29dea4aaedaa400eb66a129790c0b63273d8@0.0.0 start
+2025-09-23T14:30:14.42395382Z > node server.js
+2025-09-23T14:30:14.42395614Z 
+2025-09-23T14:30:16.6212064Z ✅ TX Trading Server running on port 5000
+2025-09-23T14:30:16.621418838Z 🔗 WebSocket available at ws://localhost:5000
+2025-09-23T14:30:19.070473996Z ==> Your service is live 🎉
+2025-09-23T14:30:19.509767418Z ==> 
+2025-09-23T14:30:19.94294816Z ==> ///////////////////////////////////////////////////////////
+2025-09-23T14:30:20.122775544Z ==> 
+2025-09-23T14:30:20.302424939Z ==> Available at your primary URL https://tx-trade-whisperer.onrender.com
+2025-09-23T14:30:20.487823013Z ==> 
+2025-09-23T14:30:20.669185917Z ==> ///////////////////////////////////////////////////////////
+2025-09-23T14:35:25.350632579Z ==> Detected service running on port 5000
+2025-09-23T14:35:25.801557716Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
