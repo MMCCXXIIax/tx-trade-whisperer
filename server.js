@@ -491,7 +491,7 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-server.listen(port, 'localhost', () => {
+server.listen(port, () => {
   console.log(`✅ TX Trading Server running on port ${port}`);
   console.log(`🔗 WebSocket available at ws://localhost:${port}`);
 });

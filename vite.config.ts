@@ -9,6 +9,9 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5000,
     strictPort: true,
+    proxy: {
+      '/api': 'http://localhost:3000'
+    }
   },
   mode: "development",
   build: {
