@@ -1,0 +1,50 @@
+2025-09-23T13:05:32.868987263Z 
+2025-09-23T13:05:32.868989583Z Node.js v22.16.0
+2025-09-23T13:05:34.846528826Z ==> Exited with status 1
+2025-09-23T13:05:35.009581498Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+2025-09-23T13:05:40.230546299Z ==> Running 'npm run start'
+2025-09-23T13:05:41.430345065Z 
+2025-09-23T13:05:41.430363245Z > 3fb1a3937f1c322ed7484db744fd29dea4aaedaa400eb66a129790c0b63273d8@0.0.0 start
+2025-09-23T13:05:41.430367075Z > node server.js
+2025-09-23T13:05:41.430369265Z 
+2025-09-23T13:05:41.920198452Z node:internal/modules/package_json_reader:256
+2025-09-23T13:05:41.920216492Z   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-09-23T13:05:41.920219762Z         ^
+2025-09-23T13:05:41.920222122Z 
+2025-09-23T13:05:41.920225442Z Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /opt/render/project/src/server.js
+2025-09-23T13:05:41.920232652Z     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:256:9)
+2025-09-23T13:05:41.920236112Z     at packageResolve (node:internal/modules/esm/resolve:768:81)
+2025-09-23T13:05:41.920238632Z     at moduleResolve (node:internal/modules/esm/resolve:854:18)
+2025-09-23T13:05:41.920243902Z     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+2025-09-23T13:05:41.920246602Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+2025-09-23T13:05:41.920249113Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+2025-09-23T13:05:41.920251703Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+2025-09-23T13:05:41.920254153Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+2025-09-23T13:05:41.920258613Z     at ModuleJob._link (node:internal/modules/esm/module_job:137:49) {
+2025-09-23T13:05:41.920261633Z   code: 'ERR_MODULE_NOT_FOUND'
+2025-09-23T13:05:41.920264273Z }
+2025-09-23T13:05:41.920274103Z 
+2025-09-23T13:05:41.920276663Z Node.js v22.16.0
+2025-09-23T13:06:06.4655021Z ==> Running 'npm run start'
+2025-09-23T13:06:07.563592041Z 
+2025-09-23T13:06:07.563620302Z > 3fb1a3937f1c322ed7484db744fd29dea4aaedaa400eb66a129790c0b63273d8@0.0.0 start
+2025-09-23T13:06:07.563625152Z > node server.js
+2025-09-23T13:06:07.563627442Z 
+2025-09-23T13:06:07.968792315Z node:internal/modules/package_json_reader:256
+2025-09-23T13:06:07.968814135Z   throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+2025-09-23T13:06:07.968818215Z         ^
+2025-09-23T13:06:07.968821155Z 
+2025-09-23T13:06:07.968825035Z Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'express' imported from /opt/render/project/src/server.js
+2025-09-23T13:06:07.968831046Z     at Object.getPackageJSONURL (node:internal/modules/package_json_reader:256:9)
+2025-09-23T13:06:07.968836075Z     at packageResolve (node:internal/modules/esm/resolve:768:81)
+2025-09-23T13:06:07.968838826Z     at moduleResolve (node:internal/modules/esm/resolve:854:18)
+2025-09-23T13:06:07.968841356Z     at defaultResolve (node:internal/modules/esm/resolve:984:11)
+2025-09-23T13:06:07.968843536Z     at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:780:12)
+2025-09-23T13:06:07.968845676Z     at #cachedDefaultResolve (node:internal/modules/esm/loader:704:25)
+2025-09-23T13:06:07.968847766Z     at ModuleLoader.resolve (node:internal/modules/esm/loader:687:38)
+2025-09-23T13:06:07.968849756Z     at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:305:38)
+2025-09-23T13:06:07.968851836Z     at ModuleJob._link (node:internal/modules/esm/module_job:137:49) {
+2025-09-23T13:06:07.968876046Z   code: 'ERR_MODULE_NOT_FOUND'
+2025-09-23T13:06:07.968883076Z }
+2025-09-23T13:06:07.968886007Z 
+2025-09-23T13:06:07.968889157Z Node.js v22.16.0
