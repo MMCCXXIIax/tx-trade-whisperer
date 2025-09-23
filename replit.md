@@ -4,13 +4,15 @@ This is TX – Trade Whisperer, an AI-powered trading intelligence platform that
 
 The platform is designed as a comprehensive trading assistant that scans markets, detects patterns using AI, and provides actionable trading intelligence to users. It supports both demo mode for learning and live mode for actual trading.
 
-## Recent Changes (September 8, 2025)
+## Recent Changes (September 23, 2025)
 - Successfully imported from GitHub and configured for Replit environment
-- Frontend configured to run on port 5000 with proper host settings (0.0.0.0)
-- Backend configured to run on port 3000 with localhost binding
-- PostgreSQL database created and schema pushed successfully
-- Workflow configured to run both frontend and backend simultaneously
-- Deployment configuration set up for autoscale target
+- Frontend configured to run on port 5000 with proper host settings (0.0.0.0) using Vite
+- Backend API server running on port 3000 with Express.js and Socket.io
+- Configured Vite proxy to route /api requests from frontend to backend
+- Fixed path routing issues in Express server for compatibility
+- Both frontend and backend workflows running successfully
+- API endpoints tested and functioning correctly (health, features, assets, etc.)
+- Deployment configuration set up for autoscale target with build and run commands
 
 # User Preferences
 
