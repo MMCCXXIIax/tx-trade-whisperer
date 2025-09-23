@@ -3,7 +3,13 @@ import react from "@vitejs/plugin-react";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 import path from "path";
 import tsconfigPaths from "vite-tsconfig-paths";
-const config = {
+
+export default defineConfig({
+  server: {
+    host: "0.0.0.0",
+    port: 5000,
+    strictPort: true,
+  },
   mode: "development",
   build: {
     outDir: "dist",
@@ -14,9 +20,13 @@ const config = {
     terserOptions: { compress: false, mangle: false },
   },
   define: { "process.env.NODE_ENV": "'development'" },
-  esbuild: { jsx: "automatic", jsxImportSource: "react" },
+  esbuild: { 
+    jsx: "automatic" as const, 
+    jsxImportSource: "react" 
+  },
   plugins: [
     react(),
+    tsconfigPaths(),
     viteStaticCopy({
       targets: [
         { src: "./assets/*", dest: "assets" },
@@ -29,7 +39,9 @@ const config = {
       silent: true,
     }),
   ],
-  resolve: {},
-};
-config.plugins.push(tsconfigPaths());
-export default defineConfig(config);
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+});

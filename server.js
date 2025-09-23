@@ -457,14 +457,6 @@ app.get('/api/scan/status', async (req, res) => {
   }
 });
 
-// Serve static files from the dist folder
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// SPA Fallback: send index.html for any unknown paths
-app.get('*', (_, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
 // WebSocket connection handling
 io.on('connection', (socket) => {
   console.log('Client connected to WebSocket');
@@ -494,15 +486,12 @@ setInterval(() => {
   io.to('alerts').emit('pattern_alert', mockAlert);
 }, 30000);
 
-// Serve static files from the dist directory
-app.use(express.static(path.join(__dirname, 'dist')));
-
-// For any other request, send the index.html file
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// Basic 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
 });
 
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, 'localhost', () => {
   console.log(`✅ TX Trading Server running on port ${port}`);
   console.log(`🔗 WebSocket available at ws://localhost:${port}`);
 });

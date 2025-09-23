@@ -18,15 +18,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "TX Trading Platform"
+args = "Frontend Development Server"
 
 [[workflows.workflow]]
-name = "TX Trading Platform"
+name = "Frontend Development Server"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "bash -c 'npm run start & sleep 2 && npm run dev'"
+args = "npm run dev"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -40,6 +40,10 @@ exposeLocalhost = true
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 39259
+externalPort = 3001
 
 [agent]
 integrations = ["javascript_database:1.0.0"]
