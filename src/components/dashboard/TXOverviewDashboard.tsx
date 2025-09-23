@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ export function TXOverviewDashboard() {
   const [alerts, setAlerts] = useState<AlertData[]>([]);
   const [marketData, setMarketData] = useState<MarketData[]>([]);
   const [scanStatus, setScanStatus] = useState({ active: true, lastScan: new Date() });
-  const [stats, setStats] = useState({
+  const [stats] = useState({
     patternsToday: 12,
     successRate: 85.2,
     alertsSent: 34,
