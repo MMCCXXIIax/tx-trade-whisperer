@@ -2,8 +2,8 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/AuthPage'
-import TXMainDashboard from '@/components/TXMainDashboard';
-import SettingsPage from '@/components/SettingsPage';
+import TXMainDashboard from '@/components/TXMainDashboard'
+import SettingsPage from '@/components/SettingsPage'
 import NotFoundPage from '@/pages/NotFound'
 import AuthLoading from '@/pages/AuthLoading'
 import { Toaster } from '@/components/ui/toaster'
