@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/AuthPage'
 import Welcome from '@/pages/Welcome'
-import { TXOverviewDashboard } from '@/components/dashboard/TXOverviewDashboard';
+import TXMainDashboard from '@/components/TXMainDashboard';
 import NotFoundPage from '@/pages/NotFound'
 import AuthLoading from '@/pages/AuthLoading' // public route
 import { Toaster } from '@/components/ui/toaster'
@@ -20,9 +20,8 @@ export default function App() {
         {/* Onboarding */}
         <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
 
-        {/* Main dashboard - OPEN ACCESS FOR BETA */}
-        <Route path="/tx-dashboard" element={<TXOverviewDashboard />} />
-        <Route path="/demo" element={<TXOverviewDashboard />} />
+        {/* Main dashboard with full navigation */}
+        <Route path="/tx-dashboard" element={<ProtectedRoute><TXMainDashboard /></ProtectedRoute>} />
 
         {/* Default - Direct to dashboard for beta */}
         <Route path="/" element={<Navigate to="/tx-dashboard" replace />} />

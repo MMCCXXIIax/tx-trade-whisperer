@@ -11,26 +11,22 @@ import { TXPortfolioDashboard } from '@/components/dashboard/TXPortfolioDashboar
 import { TXSettingsDashboard } from '@/components/dashboard/TXSettingsDashboard';
 
 export default function TXMainDashboard() {
-  const [currentPage, setCurrentPage] = useState('overview');
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'overview':
+      case 'dashboard':
         return <TXOverviewDashboard />;
-      case 'patterns':
-        return <TXPatternDashboard />;
       case 'trading':
         return <TXTradingDashboard />;
-      case 'sentiment':
-        return <TXSentimentDashboard />;
-      case 'backtest':
-        return <TXBacktestDashboard />;
-      case 'builder':
-        return <TXBuilderDashboard />;
+      case 'alerts':
+        return <TXPatternDashboard />;
       case 'logs':
         return <TXLogsDashboard />;
-      case 'portfolio':
+      case 'paper-trading':
         return <TXPortfolioDashboard />;
+      case 'performance':
+        return <TXBacktestDashboard />;
       case 'settings':
         return <TXSettingsDashboard />;
       default:
