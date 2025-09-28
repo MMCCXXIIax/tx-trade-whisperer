@@ -2,20 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-<<<<<<< HEAD
 import { supabase } from '@/integrations/supabase/client'
 import { saveProfile } from '@/lib/saveProfile'
-
-=======
-import { createClient } from '@supabase/supabase-js'
-import { saveProfile } from '@/lib/saveProfile'
-
-const supabase = createClient(
-  'https://zqrelfdmdrwwxrfoclzp.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxcmVsZmRtZHJ3d3hyZm9jbHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ1MTU1MDAsImV4cCI6MjA3MDA5MTUwMH0.Uebb9Xk8AESgapG95JbX0LoxlO-XCFUlTn6nrXCe1c8'
-)
-
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 export default function AuthPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
