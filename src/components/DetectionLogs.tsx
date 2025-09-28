@@ -150,33 +150,40 @@ const DetectionLogs: React.FC = () => {
 
   const exportLogs = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/export_detection_logs?days=${dateRange}`);
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `tx_detection_logs_${dateRange}days.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      } else {
-        // Fallback: export as JSON if CSV not available
-        const dataStr = JSON.stringify(detections, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `tx_detection_logs_${dateRange}days.json`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
-      }
+      // Since /api/export_detection_logs is not documented in Flask API,
+      // we'll export the current detection data as JSON/CSV client-side
+      const exportData = detections.map(detection => ({
+        id: detection.id,
+        symbol: detection.symbol,
+        pattern: detection.pattern,
+        confidence: detection.confidence,
+        timestamp: detection.timestamp,
+        outcome: detection.outcome || 'pending',
+        price: detection.price || 'N/A',
+        timeframe: detection.timeframe || '1d'
+      }));
+
+      // Create CSV format
+      const csvHeaders = 'ID,Symbol,Pattern,Confidence,Timestamp,Outcome,Price,Timeframe\n';
+      const csvRows = exportData.map(row => 
+        `${row.id},${row.symbol},${row.pattern},${row.confidence},${row.timestamp},${row.outcome},${row.price},${row.timeframe}`
+      ).join('\n');
+      const csvContent = csvHeaders + csvRows;
+
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `tx_pattern_stats_${dateRange}days_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      console.log(`Exported ${exportData.length} pattern detection records`);
     } catch (error) {
-      console.error('Failed to export logs:', error);
+      console.error('Failed to export pattern stats:', error);
     }
   };
 

@@ -79,16 +79,20 @@ const PaperTrading: React.FC = () => {
 
   const fetchPaperTrades = async () => {
     try {
-      const json = await safeFetch<any>("/paper/portfolio");
-      if (json?.paper_trades) {
-        setPaperTrades(json.paper_trades);
-      } else if (json?.positions) {
-        setPaperTrades(json.positions);
-      } else if (Array.isArray(json)) {
-        setPaperTrades(json);
+      // Since /paper/* endpoints are not documented in Flask API,
+      // we'll use localStorage for mock paper trading functionality
+      const storedTrades = localStorage.getItem('tx_paper_trades');
+      if (storedTrades) {
+        const trades = JSON.parse(storedTrades) as PaperTrade[];
+        setPaperTrades(trades);
+      } else {
+        // Initialize with empty array
+        setPaperTrades([]);
+        localStorage.setItem('tx_paper_trades', JSON.stringify([]));
       }
     } catch (error) {
-      console.error('Failed to fetch paper trades:', error);
+      console.error('Failed to load paper trades from localStorage:', error);
+      setPaperTrades([]);
     } finally {
       setIsLoading(false);
     }
@@ -96,18 +100,13 @@ const PaperTrading: React.FC = () => {
 
   const fetchTradingStats = async () => {
     try {
-      const json = await safeFetch<any>("/paper/portfolio");
-      if (json && (json.total_balance !== undefined || json.portfolio)) {
-        const stats = calculateStatsFromTrades(paperTrades);
-        setTradingStats(stats);
-      } else {
-        const stats = calculateStatsFromTrades(paperTrades);
-        setTradingStats(stats);
-      }
-    } catch (error) {
-      console.error('Failed to fetch trading stats:', error);
+      // Calculate stats from current paper trades (localStorage-based)
       const stats = calculateStatsFromTrades(paperTrades);
       setTradingStats(stats);
+    } catch (error) {
+      console.error('Failed to calculate trading stats:', error);
+      const fallbackStats = calculateStatsFromTrades([]);
+      setTradingStats(fallbackStats);
     }
   };
 
@@ -117,46 +116,81 @@ const PaperTrading: React.FC = () => {
       return;
     }
     setIsTrading(true);
-    const result = await safeFetch('/paper/trade', {
-      method: 'POST',
-      body: JSON.stringify({
+    
+    try {
+      // Create new trade object
+      const newTrade: PaperTrade = {
+        id: Date.now(), // Simple ID generation
         symbol: symbol.toUpperCase(),
-        side: action.toLowerCase(),
-        qty: parseFloat(quantity),
-        price: parseFloat(price),
+        action: action,
+        entry_price: price,
+        quantity: parseFloat(quantity),
+        status: 'open',
+        timestamp: new Date().toISOString(),
         pattern: 'Manual',
-        confidence: 1.0,
-      }),
-    });
-    if (result) {
+        confidence: '100%'
+      };
+
+      // Get existing trades and add new one
+      const existingTrades = JSON.parse(localStorage.getItem('tx_paper_trades') || '[]') as PaperTrade[];
+      const updatedTrades = [newTrade, ...existingTrades];
+      
+      // Save to localStorage
+      localStorage.setItem('tx_paper_trades', JSON.stringify(updatedTrades));
+      
       toast({ title: 'Trade Placed', description: `${action} ${quantity} ${symbol.toUpperCase()} @ $${price}` });
       setSymbol('');
       setQuantity('');
       setPrice('');
       setAction('BUY');
+      
+      // Refresh data
       fetchPaperTrades();
       fetchTradingStats();
-    } else {
+    } catch (error) {
+      console.error('Failed to place paper trade:', error);
       toast({ title: 'Trade Failed', description: 'Unable to place paper trade. Please try again.', variant: 'destructive' });
     }
+    
     setIsTrading(false);
   };
 
   const closePosition = async (symbol: string) => {
     try {
-      const trade = paperTrades.find(t => t.symbol === symbol && t.status === 'open');
-      const tradeId = trade?.id ?? symbol; // fallback to symbol if id missing
-      const result = await safeFetch(`/paper/trade/${tradeId}/close`, {
-        method: 'POST',
-        body: JSON.stringify({ price: 0 }),
-      });
-      if (result) {
-        toast({ title: 'Position Closed', description: `${symbol} position closed successfully` });
-        fetchPaperTrades();
-        fetchTradingStats();
-      } else {
-        toast({ title: 'Close Failed', description: `Unable to close ${symbol} position. Please try again.`, variant: 'destructive' });
+      const existingTrades = JSON.parse(localStorage.getItem('tx_paper_trades') || '[]') as PaperTrade[];
+      const tradeIndex = existingTrades.findIndex(t => t.symbol === symbol && t.status === 'open');
+      
+      if (tradeIndex === -1) {
+        toast({ title: 'Trade Not Found', description: `No open position found for ${symbol}`, variant: 'destructive' });
+        return;
       }
+
+      // Close the trade and calculate P&L
+      const trade = existingTrades[tradeIndex];
+      const currentPrice = parseFloat(trade.entry_price) * (0.95 + Math.random() * 0.1); // Mock current price ±5%
+      const pnl = trade.action === 'BUY' 
+        ? (currentPrice - parseFloat(trade.entry_price)) * trade.quantity
+        : (parseFloat(trade.entry_price) - currentPrice) * trade.quantity;
+      
+      // Update trade
+      existingTrades[tradeIndex] = {
+        ...trade,
+        status: 'closed',
+        exit_price: currentPrice.toFixed(2),
+        pnl: Math.round(pnl * 100) / 100 // Round to 2 decimals
+      };
+      
+      // Save updated trades
+      localStorage.setItem('tx_paper_trades', JSON.stringify(existingTrades));
+      
+      toast({ 
+        title: 'Position Closed', 
+        description: `${symbol} position closed at $${currentPrice.toFixed(2)}. P&L: $${pnl.toFixed(2)}` 
+      });
+      
+      // Refresh data
+      fetchPaperTrades();
+      fetchTradingStats();
     } catch (error) {
       console.error('Failed to close position:', error);
       toast({ title: 'Close Failed', description: `Error closing ${symbol} position.`, variant: 'destructive' });

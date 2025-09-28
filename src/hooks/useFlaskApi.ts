@@ -249,15 +249,17 @@ export function useScanner() {
 export function useSystemHealth() {
   const [health, setHealth] = useState<any>(null);
   const [coverage, setCoverage] = useState<any>(null);
+  const [twitterHealth, setTwitterHealth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchHealth = useCallback(async () => {
     try {
       setError(null);
-      const [healthResponse, coverageResponse] = await Promise.all([
+      const [healthResponse, coverageResponse, twitterResponse] = await Promise.all([
         apiClient.getHealth(),
-        apiClient.getCoverage()
+        apiClient.getCoverage(),
+        apiClient.getTwitterHealth().catch(() => ({ success: false, error: 'Twitter health endpoint not available' })) // Optional endpoint
       ]);
       
       if (healthResponse.success) {
@@ -266,6 +268,10 @@ export function useSystemHealth() {
       
       if (coverageResponse.success) {
         setCoverage(coverageResponse.data);
+      }
+      
+      if (twitterResponse.success) {
+        setTwitterHealth(twitterResponse.data);
       }
       
       if (!healthResponse.success && !coverageResponse.success) {
@@ -286,7 +292,7 @@ export function useSystemHealth() {
     return () => clearInterval(interval);
   }, [fetchHealth]);
 
-  return { health, coverage, loading, error, refetch: fetchHealth };
+  return { health, coverage, twitterHealth, loading, error, refetch: fetchHealth };
 }
 
 // Backtesting hook

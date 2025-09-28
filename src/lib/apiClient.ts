@@ -174,6 +174,11 @@ class ApiClient {
     return this.request<{ latest_detection_id: number; timestamp: string }>('/get_latest_detection_id');
   }
 
+  // Optional Twitter health endpoint (mentioned in Flask docs)
+  async getTwitterHealth() {
+    return this.request<{ twitter_metrics: any; status: string; timestamp: string }>('/sentiment/twitter-health');
+  }
+
 }
 
 export const apiClient = new ApiClient();

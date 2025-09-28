@@ -27,7 +27,7 @@ const FlaskApiExample: React.FC = () => {
   const { sentiment, loading: sentimentLoading, error: sentimentError } = useSentimentData(selectedSymbol);
   const { signals, loading: signalsLoading, error: signalsError } = useEntryExitSignals(selectedSymbol);
   const { scanStatus, loading: scannerLoading, startScan, stopScan } = useScanner();
-  const { health, coverage, loading: healthLoading } = useSystemHealth();
+  const { health, coverage, twitterHealth, loading: healthLoading } = useSystemHealth();
   const { results: backtestResults, loading: backtestLoading, runBacktest } = useBacktest();
 
   const handleStartScanner = () => {
@@ -321,6 +321,14 @@ const FlaskApiExample: React.FC = () => {
                           {coverage.sources?.crypto && <Badge variant="outline">Crypto</Badge>}
                           {coverage.sources?.stocks && <Badge variant="outline">Stocks</Badge>}
                         </div>
+                      </div>
+                    )}
+                    {twitterHealth && (
+                      <div className="space-y-2 mt-4">
+                        <div className="text-sm font-semibold">Twitter API:</div>
+                        <Badge variant={twitterHealth.status === 'active' ? 'default' : 'secondary'}>
+                          {twitterHealth.status || 'Unknown'}
+                        </Badge>
                       </div>
                     )}
                   </CardContent>
