@@ -7,7 +7,6 @@ import { Bell, AlertTriangle, CheckCircle, Clock, Filter } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { safeFetch } from '@/lib/api';
 
-<<<<<<< HEAD
 // Helper function to calculate alert stats from alert data
 const calculateAlertStats = (alerts: Alert[]): AlertStats => {
   const activeAlerts = alerts.filter(a => a.status === 'active').length;
@@ -37,8 +36,6 @@ const calculateAlertStats = (alerts: Alert[]): AlertStats => {
   };
 };
 
-=======
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 interface Alert {
   id?: number;
   symbol: string;
@@ -74,19 +71,15 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlerts = async () => {
     try {
-<<<<<<< HEAD
-      const data = await safeFetch<{ alerts: Alert[] }>('/api/alerts/recent?limit=100');
+      // Use Flask endpoint: GET /api/get_active_alerts
+      const data = await safeFetch<Alert[]>("/get_active_alerts");
       if (data) {
-        if (data.alerts) {
-          setAlerts(data.alerts || []);
-        } else if (Array.isArray(data)) {
+        // Flask returns { success, alerts: [...] } format
+        if (Array.isArray(data)) {
           setAlerts(data);
+        } else {
+          setAlerts([]);
         }
-=======
-      const data = await safeFetch<{ alerts: Alert[] }>('/api/get_all_alerts');
-      if (data) {
-        setAlerts(data.alerts || []);
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
       }
     } catch (error) {
       console.error('Failed to fetch alerts:', error);
@@ -97,28 +90,11 @@ const AlertCenter: React.FC = () => {
 
   const fetchAlertStats = async () => {
     try {
-<<<<<<< HEAD
-      const data = await safeFetch<AlertStats>('/api/alerts/stats');
-      if (data) {
-        setAlertStats(data);
-      } else {
-        // If no stats endpoint, calculate from alerts
-        const calculatedStats = calculateAlertStats(alerts);
-        setAlertStats(calculatedStats);
-      }
-    } catch (error) {
-      console.error('Failed to fetch alert stats:', error);
-      // Fallback to calculated stats
+      // Compute locally since /api/alerts/stats is not guaranteed
       const calculatedStats = calculateAlertStats(alerts);
       setAlertStats(calculatedStats);
-=======
-      const data = await safeFetch<AlertStats>('/api/get_alert_stats');
-      if (data) {
-        setAlertStats(data);
-      }
     } catch (error) {
-      console.error('Failed to fetch alert stats:', error);
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
+      console.error('Failed to compute alert stats:', error);
     }
   };
 

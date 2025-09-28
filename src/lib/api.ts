@@ -21,6 +21,14 @@ const getApiBase = () => {
 
 export const API_BASE = getApiBase();
 
+// Flask API response interface
+interface FlaskResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  alerts?: any[]; // For /get_active_alerts compatibility
+}
+
 export async function safeFetch<T>(
   path: string,
   options: RequestInit = {},
@@ -61,7 +69,26 @@ export async function safeFetch<T>(
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return await response.json();
+      const jsonResponse = await response.json() as FlaskResponse<T>;
+      
+      // Handle Flask response format: { success, data?, error?, alerts? }
+      if (typeof jsonResponse.success === 'boolean') {
+        if (!jsonResponse.success) {
+          console.error(`API Error: ${jsonResponse.error}`);
+          toast({
+            title: "API Error",
+            description: jsonResponse.error || "Unknown server error",
+            variant: "destructive"
+          });
+          return null;
+        }
+        
+        // Return data field or fallback to alerts field for compatibility
+        return (jsonResponse.data || jsonResponse.alerts || jsonResponse) as T;
+      }
+      
+      // Legacy format compatibility - return as-is
+      return jsonResponse as T;
     } catch (error) {
       console.error(`API call failed (attempt ${attempt + 1}) to ${url}:`, error);
       

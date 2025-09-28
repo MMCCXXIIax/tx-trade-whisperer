@@ -33,16 +33,12 @@ if (process.env.NODE_ENV === "development") {
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-<<<<<<< HEAD
-    host: "::",
-=======
     host: "0.0.0.0",
     port: 8080,
     strictPort: false,
   },
   preview: {
     host: "0.0.0.0",
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
     port: 8080,
   },
   plugins: [
@@ -54,8 +50,6 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-<<<<<<< HEAD
-=======
   build: {
     outDir: 'dist',
     sourcemap: false,
@@ -69,5 +63,4 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
->>>>>>> c646b09155e6d424b19520438c4cb96f629963d5
 }));

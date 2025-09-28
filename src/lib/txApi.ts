@@ -1,7 +1,6 @@
 // TX Trading Platform API Client - Complete A-Z Feature Integration
-// Production API integration with https://tx-predictive-intelligence.onrender.com
-import { safeFetch } from './api';
-const TX_API_BASE = 'https://tx-predictive-intelligence.onrender.com/api';
+import { API_BASE } from './api';
+const TX_API_BASE = `${API_BASE}/api`;
 
 interface ApiResponse<T> {
   data: T;
