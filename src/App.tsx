@@ -20,10 +20,11 @@ export default function App() {
         {/* Onboarding */}
         <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
 
-        {/* Main dashboard */}
-<Route path="/tx-dashboard" element={<ProtectedRoute><TXOverviewDashboard /></ProtectedRoute>} />
+        {/* Main dashboard - OPEN ACCESS FOR BETA */}
+        <Route path="/tx-dashboard" element={<TXOverviewDashboard />} />
+        <Route path="/demo" element={<TXOverviewDashboard />} />
 
-        {/* Default */}
+        {/* Default - Direct to dashboard for beta */}
         <Route path="/" element={<Navigate to="/tx-dashboard" replace />} />
 
         {/* Catch-all */}

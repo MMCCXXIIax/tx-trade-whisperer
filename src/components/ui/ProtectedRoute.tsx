@@ -73,6 +73,10 @@ export default function ProtectedRoute({
   }
 
   if (status === 'guest') {
+    // For beta launch: Allow demo access to TX dashboard without authentication
+    if (location.pathname === '/tx-dashboard' || location.pathname === '/') {
+      return children;
+    }
     return allowGuests ? children : <Navigate to="/auth" replace />
   }
 

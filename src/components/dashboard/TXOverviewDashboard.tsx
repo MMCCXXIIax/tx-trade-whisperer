@@ -123,6 +123,14 @@ export function TXOverviewDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Beta Demo Banner */}
+      <Alert className="border-tx-green/50 bg-tx-green/10">
+        <Zap className="h-4 w-4 text-tx-green" />
+        <AlertDescription className="text-tx-green font-semibold">
+          🚀 TX Beta Demo - Real trading intelligence in action! Sign up for full access to live alerts and advanced features.
+        </AlertDescription>
+      </Alert>
+
       {/* Header */}
       <div>
         <h1 className="tx-heading-xl text-foreground">TX Overview</h1>

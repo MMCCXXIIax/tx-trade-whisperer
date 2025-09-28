@@ -207,3 +207,60 @@
     box-shadow: 0 0 20px hsl(var(--tx-green) / 0.8);
   }
 }
+
+/* TX Typography */
+.tx-heading-xl {
+  @apply text-3xl font-bold tracking-tight;
+}
+
+.tx-heading-lg {
+  @apply text-2xl font-bold tracking-tight;
+}
+
+.tx-heading-md {
+  @apply text-xl font-semibold;
+}
+
+.tx-body {
+  @apply text-base leading-relaxed;
+}
+
+/* TX Components */
+.tx-terminal-glass {
+  @apply terminal-container bg-card/60 border-border/40 backdrop-blur-lg;
+  background: linear-gradient(135deg, hsl(var(--card) / 0.8) 0%, hsl(var(--card) / 0.4) 100%);
+}
+
+.tx-confidence-high {
+  @apply text-tx-green bg-tx-green/10 border-tx-green/30;
+}
+
+.tx-confidence-medium {
+  @apply text-tx-orange bg-tx-orange/10 border-tx-orange/30;
+}
+
+.tx-confidence-low {
+  @apply text-tx-red bg-tx-red/10 border-tx-red/30;
+}
+
+/* TX Interactive States */
+.tx-card-hover {
+  @apply hover:border-tx-green/50 hover:shadow-lg hover:shadow-tx-green/10 transition-all duration-300;
+}
+
+.tx-glow-on-hover:hover {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* TX Status Indicators */
+.tx-status-online {
+  @apply bg-tx-green text-tx-black;
+}
+
+.tx-status-offline {
+  @apply bg-tx-red text-white;
+}
+
+.tx-status-warning {
+  @apply bg-tx-orange text-tx-black;
+}
