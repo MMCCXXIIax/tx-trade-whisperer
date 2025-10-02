@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      alerts: {
+        Row: {
+          alert_type: string
+          confidence: number
+          created_at: string | null
+          id: number
+          is_active: boolean | null
+          message: string
+          metadata: Json | null
+          symbol: string
+          user_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          confidence: number
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          message: string
+          metadata?: Json | null
+          symbol: string
+          user_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          confidence?: number
+          created_at?: string | null
+          id?: number
+          is_active?: boolean | null
+          message?: string
+          metadata?: Json | null
+          symbol?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       app_state: {
         Row: {
           key: string
@@ -83,6 +119,75 @@ export type Database = {
           id?: number
           message?: string | null
           source?: string
+        }
+        Relationships: []
+      }
+      paper_trades: {
+        Row: {
+          closed_at: string | null
+          id: string
+          opened_at: string | null
+          price: number | null
+          qty: number | null
+          side: string | null
+          symbol: string | null
+          user_id: string | null
+        }
+        Insert: {
+          closed_at?: string | null
+          id: string
+          opened_at?: string | null
+          price?: number | null
+          qty?: number | null
+          side?: string | null
+          symbol?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          closed_at?: string | null
+          id?: string
+          opened_at?: string | null
+          price?: number | null
+          qty?: number | null
+          side?: string | null
+          symbol?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      pattern_detections: {
+        Row: {
+          confidence: number
+          detected_at: string | null
+          id: number
+          metadata: Json | null
+          pattern_type: string
+          price: number | null
+          symbol: string
+          user_id: string | null
+          volume: number | null
+        }
+        Insert: {
+          confidence: number
+          detected_at?: string | null
+          id?: number
+          metadata?: Json | null
+          pattern_type: string
+          price?: number | null
+          symbol: string
+          user_id?: string | null
+          volume?: number | null
+        }
+        Update: {
+          confidence?: number
+          detected_at?: string | null
+          id?: number
+          metadata?: Json | null
+          pattern_type?: string
+          price?: number | null
+          symbol?: string
+          user_id?: string | null
+          volume?: number | null
         }
         Relationships: []
       }
