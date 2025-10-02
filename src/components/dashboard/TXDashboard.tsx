@@ -1,329 +1,294 @@
-import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TrendingUp, TrendingDown, Volume2, VolumeOff, Bell, Target, BarChart3, Wifi, WifiOff } from 'lucide-react';
-import { apiClient } from '@/lib/apiClient';
+import { Bell, TrendingUp, Activity, DollarSign, Play, X, Clock } from 'lucide-react';
 import { useWebSocket } from '@/hooks/useWebSocket';
-import { safeFetch } from '@/lib/api';
+import { useEffect, useState } from 'react';
+import { BackendAlert } from '@/types/alerts';
+import { apiClient } from '@/lib/apiClient';
+import { useToast } from '@/hooks/use-toast';
 
-interface Alert {
-  id: string;
-  symbol: string;
-  pattern: string;
-  confidence: number;
-  price: number;
-  timestamp: string;
-  explanation?: string;
-  entryPrice?: number;
-  stopLoss?: number;
-  takeProfit?: number;
-  riskReward?: string;
-}
+export function TXDashboard() {
+  const { isConnected, lastBatchAlert } = useWebSocket();
+  const [alerts, setAlerts] = useState<BackendAlert[]>([]);
+  const [features, setFeatures] = useState<any>(null);
+  const { toast } = useToast();
 
-interface MarketData {
-  symbol: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  volume: number;
-}
-
-interface SentimentData {
-  symbol: string;
-  sentiment: 'bullish' | 'bearish' | 'neutral';
-  score: number;
-  volume: number;
-}
-
-export default function TXDashboard() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [marketData, setMarketData] = useState<MarketData[]>([]);
-  const [sentiment, setSentiment] = useState<SentimentData[]>([]);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [selectedAsset, setSelectedAsset] = useState('bitcoin');
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // WebSocket connection for real-time alerts
-  const { socket, isConnected, alerts: wsAlerts, lastAlert } = useWebSocket();
-
-  // Fetch real data from production API
+  // Fetch initial alerts and features
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch recent alerts
-        const alertsResponse = await safeFetch<{data: Alert[]}>('/alerts/recent?limit=10');
-        if (alertsResponse?.data) {
-          setAlerts(alertsResponse.data);
-        }
-
-        // Fetch market data for top assets
-        const assets = ['BTC', 'ETH', 'SOL', 'AAPL', 'TSLA'];
-        const marketDataPromises = assets.map(async (symbol) => {
-          const data = await safeFetch<{data: MarketData}>(`/data/${symbol}`);
-          return data?.data;
-        });
-        
-        const marketDataResults = await Promise.all(marketDataPromises);
-        const validMarketData = marketDataResults.filter(Boolean) as MarketData[];
-        setMarketData(validMarketData);
-
-        // Fetch sentiment data
-        const sentimentPromises = assets.slice(0, 3).map(async (symbol) => {
-          const data = await safeFetch<{data: SentimentData}>(`/sentiment/${symbol}`);
-          return data?.data;
-        });
-        
-        const sentimentResults = await Promise.all(sentimentPromises);
-        const validSentiment = sentimentResults.filter(Boolean) as SentimentData[];
-        setSentiment(validSentiment);
-        
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        // Fallback to empty arrays instead of mock data
-        setAlerts([]);
-        setMarketData([]);
-        setSentiment([]);
-      } finally {
-        setIsLoading(false);
+    const fetchData = async () => {
+      const [alertsRes, featuresRes] = await Promise.all([
+        apiClient.getActiveAlerts(),
+        apiClient.getFeatures()
+      ]);
+      
+      if (alertsRes.success && alertsRes.data?.alerts) {
+        setAlerts(alertsRes.data.alerts);
+      }
+      
+      if (featuresRes.success && featuresRes.data) {
+        setFeatures(featuresRes.data);
       }
     };
-
-    fetchDashboardData();
     
-    // Set up real-time updates every 2 minutes (as per documentation)
-    const interval = setInterval(fetchDashboardData, 120000);
-    return () => clearInterval(interval);
+    fetchData();
   }, []);
 
-  const playAlertSound = () => {
-    if (soundEnabled) {
-      // Create audio notification
-      const audio = new Audio('/alert.mp3');
-      audio.volume = 0.7;
-      audio.play().catch(e => console.log('Audio play failed:', e));
-    }
-  };
-
-  // Play sound when new WebSocket alert arrives
+  // Update alerts from WebSocket - batch alerts take priority
   useEffect(() => {
-    if (lastAlert && soundEnabled) {
-      playAlertSound();
-      // Add new alert to existing alerts
-      setAlerts(prev => [lastAlert, ...prev.slice(0, 9)]); // Keep only 10 latest
+    if (lastBatchAlert) {
+      setAlerts(prev => [lastBatchAlert, ...prev.slice(0, 19)]);
     }
-  }, [lastAlert, soundEnabled]);
+  }, [lastBatchAlert]);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2
-    }).format(price);
-  };
+  const handleExecuteTrade = async (alert: BackendAlert) => {
+    if (!features?.paper_trading_enabled) {
+      toast({
+        title: "Paper Trading Disabled",
+        description: "Paper trading is currently disabled on the backend.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const formatLargeNumber = (num: number) => {
-    if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
-    return num.toString();
-  };
+    try {
+      const response = await apiClient.executeFromAlert({
+        symbol: alert.symbol,
+        suggested_action: alert.metadata.suggested_action,
+        risk_suggestions: alert.metadata.risk_suggestions,
+        confidence: alert.confidence,
+        pattern: alert.alert_type,
+        quantity: 1
+      });
 
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 85) return 'bg-green-500';
-    if (confidence >= 70) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
-  const getSentimentEmoji = (sentiment: string) => {
-    switch (sentiment) {
-      case 'bullish': return '😊';
-      case 'bearish': return '😰';
-      default: return '😐';
+      if (response.success) {
+        toast({
+          title: "Trade Executed",
+          description: `${alert.metadata.suggested_action} order placed for ${alert.symbol}`,
+        });
+      } else {
+        toast({
+          title: "Trade Failed",
+          description: response.error || "Failed to execute trade",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to execute trade",
+        variant: "destructive"
+      });
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-lg">Loading TX Trading Intelligence...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleDismiss = async (alertId: number) => {
+    try {
+      await apiClient.dismissAlert(alertId.toString());
+      setAlerts(prev => prev.filter(a => a.id !== alertId));
+      toast({
+        title: "Alert Dismissed",
+        description: "Alert has been dismissed",
+      });
+    } catch (error) {
+      console.error('Failed to dismiss alert:', error);
+    }
+  };
+
+  const handleSnooze = async (alertId: number) => {
+    try {
+      await apiClient.handleAlertResponse({
+        alert_id: alertId,
+        response: 'snooze'
+      });
+      toast({
+        title: "Alert Snoozed",
+        description: "Alert has been snoozed for 1 hour",
+      });
+    } catch (error) {
+      console.error('Failed to snooze alert:', error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-3xl font-bold text-gray-900">TX Trading Platform</h1>
-          <Badge variant="outline" className={isConnected ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
-            {isConnected ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
-            {isConnected ? 'Live' : 'Offline'}
-          </Badge>
-        </div>
-        <div className="flex items-center space-x-4">
-          <Button
-            variant={soundEnabled ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-          >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeOff className="h-4 w-4" />}
-            Sound {soundEnabled ? 'On' : 'Off'}
-          </Button>
-          <select 
-            value={selectedAsset} 
-            onChange={(e) => setSelectedAsset(e.target.value)}
-            className="px-3 py-2 border rounded-md bg-white"
-          >
-            <option value="bitcoin">Bitcoin</option>
-            <option value="ethereum">Ethereum</option>
-            <option value="solana">Solana</option>
-          </select>
-        </div>
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
+            <Bell className="h-4 w-4 text-tx-green" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-tx-text">{alerts.length}</div>
+            <p className="text-xs text-tx-text-muted">
+              {isConnected ? 'Live monitoring' : 'Disconnected'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">High Confidence</CardTitle>
+            <TrendingUp className="h-4 w-4 text-tx-green" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-tx-text">
+              {alerts.filter(a => a.confidence_pct > 85).length}
+            </div>
+            <p className="text-xs text-tx-text-muted">&gt;85% confidence</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Buy Signals</CardTitle>
+            <Activity className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-tx-text">
+              {alerts.filter(a => a.metadata?.suggested_action === 'BUY').length}
+            </div>
+            <p className="text-xs text-tx-text-muted">Active buy opportunities</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Sell Signals</CardTitle>
+            <DollarSign className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-tx-text">
+              {alerts.filter(a => a.metadata?.suggested_action === 'SELL').length}
+            </div>
+            <p className="text-xs text-tx-text-muted">Active sell opportunities</p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Live Alerts - Top Priority */}
-        <div className="lg:col-span-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Bell className="h-5 w-5" />
-                <span>Live Trading Alerts</span>
-                <Badge variant="destructive">PRIORITY</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {alerts.map((alert) => (
-                  <Alert key={alert.id} className="border-l-4 border-l-blue-500">
-                    <AlertDescription>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <span className="font-bold text-lg">{alert.symbol}</span>
-                            <Badge variant="secondary">{alert.pattern}</Badge>
-                            <div className={`px-2 py-1 rounded text-white text-sm ${getConfidenceColor(alert.confidence)}`}>
-                              {alert.confidence}%
-                            </div>
-                          </div>
-                          <span className="text-lg font-semibold">{formatPrice(alert.price)}</span>
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            EXPLAIN
-                          </Button>
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                            TRADE NOW
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            + WATCHLIST
-                          </Button>
-                        </div>
+      {/* Alerts List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5 text-tx-green" />
+            Recent Alerts
+            {isConnected && (
+              <Badge className="bg-tx-green/20 text-tx-green border-tx-green/30">
+                Live
+              </Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {alerts.length === 0 ? (
+              <p className="text-center text-tx-text-muted py-8">
+                No alerts available. Waiting for pattern detections...
+              </p>
+            ) : (
+              alerts.slice(0, 5).map((alert) => (
+                <div key={alert.id} className="p-4 bg-tx-dark/30 rounded-lg border border-tx-green/20 space-y-3">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-semibold text-tx-text text-lg">{alert.symbol}</span>
+                        <Badge variant={alert.confidence_pct > 85 ? 'default' : 'secondary'}>
+                          {alert.alert_type}
+                        </Badge>
+                        <Badge 
+                          className={
+                            alert.metadata.suggested_action === 'BUY' 
+                              ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                              : alert.metadata.suggested_action === 'SELL'
+                              ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                              : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                          }
+                        >
+                          {alert.metadata.suggested_action}
+                        </Badge>
                       </div>
-                      {alert.explanation && (
-                        <p className="mt-2 text-sm text-gray-600">{alert.explanation}</p>
-                      )}
-                    </AlertDescription>
-                  </Alert>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sentiment Analysis */}
-        <div className="lg:col-span-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Market Sentiment</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {sentiment.map((item) => (
-                  <div key={item.symbol} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium">{item.symbol}</span>
-                      <span className="text-lg">{getSentimentEmoji(item.sentiment)}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium capitalize">{item.sentiment}</div>
-                      <div className="text-xs text-gray-500">Vol: {formatLargeNumber(item.volume)}</div>
+                      <p className="text-sm text-tx-text-muted mb-2">{alert.metadata.explanation}</p>
+                      <div className="flex items-center gap-3 text-xs text-tx-text-muted">
+                        <span className="font-mono">{alert.confidence_pct.toFixed(1)}% confidence</span>
+                        <span>{alert.metadata.timeframe}</span>
+                        <span title={alert.metadata.timestamp_eat}>
+                          {new Date(alert.timestamp).toLocaleTimeString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Market Overview */}
-        <div className="lg:col-span-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Market Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {marketData.map((asset) => (
-                  <div key={asset.symbol} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {asset.symbol.charAt(0)}
+                  {/* Risk Suggestions */}
+                  {alert.metadata.risk_suggestions && (
+                    <div className="grid grid-cols-4 gap-2 p-3 bg-tx-dark/50 rounded border border-tx-green/10">
+                      <div>
+                        <div className="text-xs text-tx-text-muted">Entry</div>
+                        <div className="text-sm font-semibold text-tx-green">
+                          ${alert.metadata.risk_suggestions.entry.toFixed(2)}
+                        </div>
                       </div>
                       <div>
-                        <div className="font-semibold">{asset.symbol}</div>
-                        <div className="text-sm text-gray-500">Vol: {formatLargeNumber(asset.volume)}</div>
+                        <div className="text-xs text-tx-text-muted">Stop Loss</div>
+                        <div className="text-sm font-semibold text-red-400">
+                          ${alert.metadata.risk_suggestions.stop_loss.toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-tx-text-muted">Target</div>
+                        <div className="text-sm font-semibold text-green-400">
+                          ${alert.metadata.risk_suggestions.take_profit.toFixed(2)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-tx-text-muted">R:R</div>
+                        <div className="text-sm font-semibold text-tx-text">
+                          1:{alert.metadata.risk_suggestions.rr.toFixed(2)}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-semibold">{formatPrice(asset.price)}</div>
-                      <div className={`flex items-center text-sm ${asset.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {asset.change >= 0 ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                        {asset.changePercent > 0 ? '+' : ''}{asset.changePercent}%
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  )}
 
-        {/* Pattern Scanner */}
-        <div className="lg:col-span-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Target className="h-5 w-5" />
-                <span>Pattern Scanner</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <BarChart3 className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500 mb-4">Scanning 50+ assets for patterns...</p>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="font-semibold">Last Scan</div>
-                    <div className="text-gray-500">2 min ago</div>
-                  </div>
-                  <div>
-                    <div className="font-semibold">Patterns Found</div>
-                    <div className="text-green-600">12 active</div>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    {features?.paper_trading_enabled && alert.metadata.suggested_action !== 'CONTINUATION' && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleExecuteTrade(alert)}
+                        className="bg-tx-green hover:bg-tx-green/80"
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        Execute
+                      </Button>
+                    )}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleSnooze(alert.id)}
+                      className="border-tx-green/30"
+                    >
+                      <Clock className="h-3 w-3 mr-1" />
+                      Snooze
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={() => handleDismiss(alert.id)}
+                      className="text-tx-text-muted hover:text-tx-text"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Dismiss
+                    </Button>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+export default TXDashboard;

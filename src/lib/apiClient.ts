@@ -154,7 +154,26 @@ class ApiClient {
 
   // Alert endpoints
   async getActiveAlerts() {
-    return this.request<{ alerts: Array<{ id: string; symbol: string; alert_type: string; confidence: number; confidence_pct: number }> }>('/get_active_alerts');
+    return this.request<{ alerts: any[] }>('/get_active_alerts');
+  }
+
+  async getMarketScan(type: 'trending' | 'volume' = 'trending') {
+    return this.request<any[]>(`/market-scan?type=${type}`);
+  }
+
+  async executeFromAlert(payload: {
+    symbol: string;
+    suggested_action: 'BUY' | 'SELL' | 'CONTINUATION';
+    risk_suggestions?: any;
+    confidence?: number;
+    pattern?: string;
+    alert_type?: string;
+    quantity?: number;
+  }) {
+    return this.request<{ trade: any; risk_suggestions?: any }>('/paper-trade/execute-from-alert', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
   }
 
   async dismissAlert(alertId: string) {
@@ -177,6 +196,11 @@ class ApiClient {
   // Optional Twitter health endpoint (mentioned in Flask docs)
   async getTwitterHealth() {
     return this.request<{ twitter_metrics: any; status: string; timestamp: string }>('/sentiment/twitter-health');
+  }
+
+  // Feature flags
+  async getFeatures() {
+    return this.request<any>('/features');
   }
 
 }

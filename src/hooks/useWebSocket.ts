@@ -1,56 +1,30 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { API_BASE } from '@/lib/api';
-
-// Flask Socket.IO event interfaces based on your API documentation
-interface PatternAlert {
-  symbol: string;
-  alert_type: string;
-  confidence: number;
-  confidence_pct: number;
-  price: number;
-  timestamp: string;
-  source: string;
-  explanation: string;
-  interval: string;
-  period: string;
-}
-
-interface ScanUpdate {
-  symbol: string;
-  intraday_patterns: Array<{
-    pattern_type: string;
-    confidence: number;
-    confidence_pct: number;
-    price: number;
-    timestamp: string;
-  }>;
-  context_patterns: Array<{
-    pattern_type: string;
-    confidence: number;
-    confidence_pct: number;
-    price: number;
-    timestamp: string;
-  }>;
-  timestamp: string;
-}
+import { PatternAlert, ScanUpdate, BackendAlert } from '@/types/alerts';
 
 interface UseWebSocketReturn {
   socket: Socket | null;
   isConnected: boolean;
-  alerts: PatternAlert[];
-  lastAlert: PatternAlert | null;
+  patternAlerts: PatternAlert[];
+  lastPatternAlert: PatternAlert | null;
+  batchAlerts: BackendAlert[];
+  lastBatchAlert: BackendAlert | null;
   scanUpdates: ScanUpdate[];
   lastScanUpdate: ScanUpdate | null;
+  connectionStatus: string;
 }
 
 export function useWebSocket(url?: string): UseWebSocketReturn {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [alerts, setAlerts] = useState<PatternAlert[]>([]);
-  const [lastAlert, setLastAlert] = useState<PatternAlert | null>(null);
+  const [patternAlerts, setPatternAlerts] = useState<PatternAlert[]>([]);
+  const [lastPatternAlert, setLastPatternAlert] = useState<PatternAlert | null>(null);
+  const [batchAlerts, setBatchAlerts] = useState<BackendAlert[]>([]);
+  const [lastBatchAlert, setLastBatchAlert] = useState<BackendAlert | null>(null);
   const [scanUpdates, setScanUpdates] = useState<ScanUpdate[]>([]);
   const [lastScanUpdate, setLastScanUpdate] = useState<ScanUpdate | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -67,27 +41,33 @@ export function useWebSocket(url?: string): UseWebSocketReturn {
 
     socketInstance.on('connect', () => {
       setIsConnected(true);
+      setConnectionStatus('connected');
       console.log('WebSocket connected for real-time alerts');
     });
 
     socketInstance.on('disconnect', () => {
       setIsConnected(false);
+      setConnectionStatus('disconnected');
       console.log('WebSocket disconnected');
     });
 
-    // Handle pattern_alert event from Flask Socket.IO
+    // Handle connection_status event
+    socketInstance.on('connection_status', (data: any) => {
+      console.log('Connection status:', data);
+      setConnectionStatus(data.status || 'connected');
+    });
+
+    // Handle pattern_alert event (high-confidence detection)
     socketInstance.on('pattern_alert', (alertData: PatternAlert) => {
       console.log('Pattern alert received:', alertData);
       
-      setLastAlert(alertData);
-      setAlerts(prevAlerts => [alertData, ...prevAlerts.slice(0, 49)]); // Keep last 50 alerts
+      setLastPatternAlert(alertData);
+      setPatternAlerts(prev => [alertData, ...prev.slice(0, 49)]);
       
-      // Play alert sound if available
       if (audioRef.current) {
         audioRef.current.play().catch(e => console.log('Audio play failed:', e));
       }
 
-      // Browser notification if permission granted
       if (Notification.permission === 'granted') {
         new Notification(`TX Alert: ${alertData.symbol}`, {
           body: `${alertData.alert_type} detected with ${alertData.confidence_pct}% confidence at $${alertData.price}`,
@@ -97,23 +77,46 @@ export function useWebSocket(url?: string): UseWebSocketReturn {
       }
     });
 
-    // Handle scan_update event from Flask Socket.IO
+    // Handle new_alert event (batch alerts from AlertService)
+    socketInstance.on('new_alert', (alertData: BackendAlert) => {
+      console.log('New alert received:', alertData);
+      
+      setLastBatchAlert(alertData);
+      setBatchAlerts(prev => [alertData, ...prev.slice(0, 49)]);
+      
+      if (audioRef.current) {
+        audioRef.current.play().catch(e => console.log('Audio play failed:', e));
+      }
+
+      if (Notification.permission === 'granted') {
+        new Notification(`TX Alert: ${alertData.symbol}`, {
+          body: `${alertData.alert_type} detected with ${alertData.confidence_pct}% confidence`,
+          icon: '/favicon.ico',
+          tag: 'tx-alert'
+        });
+      }
+    });
+
+    // Handle scan_update event
     socketInstance.on('scan_update', (scanData: ScanUpdate) => {
       console.log('Scan update received:', scanData);
-      
       setLastScanUpdate(scanData);
-      setScanUpdates(prevUpdates => [scanData, ...prevUpdates.slice(0, 99)]); // Keep last 100 scan updates
+      setScanUpdates(prev => [scanData, ...prev.slice(0, 99)]);
     });
 
-    // Optional: Handle additional events if your Flask backend emits them
-    socketInstance.on('market_update', (marketData) => {
+    // Handle market_scan_update event
+    socketInstance.on('market_scan_update', (data: any) => {
+      console.log('Market scan update received:', data);
+    });
+
+    // Handle market_update event
+    socketInstance.on('market_update', (marketData: any) => {
       console.log('Market update received:', marketData);
-      // Handle market data updates - can be extended based on your needs
     });
 
-    socketInstance.on('system_status', (status) => {
+    // Handle system_status event
+    socketInstance.on('system_status', (status: any) => {
       console.log('System status update:', status);
-      // Handle system status updates - can be extended based on your needs
     });
 
     setSocket(socketInstance);
@@ -139,9 +142,12 @@ export function useWebSocket(url?: string): UseWebSocketReturn {
   return {
     socket,
     isConnected,
-    alerts,
-    lastAlert,
+    patternAlerts,
+    lastPatternAlert,
+    batchAlerts,
+    lastBatchAlert,
     scanUpdates,
-    lastScanUpdate
+    lastScanUpdate,
+    connectionStatus
   };
 }

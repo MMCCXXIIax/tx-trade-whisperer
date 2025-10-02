@@ -259,18 +259,18 @@ export function useSystemHealth() {
       const [healthResponse, coverageResponse, twitterResponse] = await Promise.all([
         apiClient.getHealth(),
         apiClient.getCoverage(),
-        apiClient.getTwitterHealth().catch(() => ({ success: false, error: 'Twitter health endpoint not available' })) // Optional endpoint
+        apiClient.getTwitterHealth().catch(() => ({ success: false, error: 'Twitter health endpoint not available', data: undefined }))
       ]);
       
-      if (healthResponse.success) {
+      if (healthResponse.success && healthResponse.data) {
         setHealth(healthResponse.data);
       }
       
-      if (coverageResponse.success) {
+      if (coverageResponse.success && coverageResponse.data) {
         setCoverage(coverageResponse.data);
       }
       
-      if (twitterResponse.success) {
+      if (twitterResponse.success && twitterResponse.data) {
         setTwitterHealth(twitterResponse.data);
       }
       
