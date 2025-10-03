@@ -77,6 +77,7 @@ export type Database = {
           price: number | null
           symbol: string
           timestamp: string
+          user_id: string | null
           verified: boolean
         }
         Insert: {
@@ -87,6 +88,7 @@ export type Database = {
           price?: number | null
           symbol: string
           timestamp?: string
+          user_id?: string | null
           verified?: boolean
         }
         Update: {
@@ -97,6 +99,7 @@ export type Database = {
           price?: number | null
           symbol?: string
           timestamp?: string
+          user_id?: string | null
           verified?: boolean
         }
         Relationships: []

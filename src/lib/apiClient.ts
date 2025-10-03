@@ -176,6 +176,23 @@ class ApiClient {
     });
   }
 
+  async getPaperPortfolio(userId: string) {
+    return this.request<any[]>(`/paper-trade/portfolio?user_id=${userId}`);
+  }
+
+  async executePaperTrade(trade: {
+    symbol: string;
+    side: 'buy' | 'sell';
+    qty: number;
+    price: number;
+    user_id: string;
+  }) {
+    return this.request<any>('/paper-trade/execute', {
+      method: 'POST',
+      body: JSON.stringify(trade)
+    });
+  }
+
   async dismissAlert(alertId: string) {
     return this.request<any>(`/alerts/dismiss/${alertId}`, {
       method: 'POST'
