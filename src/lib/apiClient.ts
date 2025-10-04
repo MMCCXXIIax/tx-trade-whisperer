@@ -14,14 +14,25 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<FlaskApiResponse<T>> {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        mode: 'cors',
+        credentials: 'omit',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           ...options.headers,
         },
         ...options,
       });
 
       if (!response.ok) {
+        // Check if it's a CORS error
+        const isCorsError = response.type === 'opaque' || response.status === 0;
+        if (isCorsError) {
+          return {
+            success: false,
+            error: 'CORS Error: Flask backend must allow requests from this domain. Add your frontend URL to CORS configuration.'
+          };
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -39,6 +50,15 @@ class ApiClient {
       };
     } catch (error) {
       console.error('API request failed:', error);
+      
+      // Check for network/CORS errors
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        return {
+          success: false,
+          error: 'Network Error: Unable to reach Flask backend. Check if the backend is running and CORS is configured correctly.'
+        };
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -208,6 +228,10 @@ class ApiClient {
 
   async getLatestDetectionId() {
     return this.request<{ latest_detection_id: number; timestamp: string }>('/get_latest_detection_id');
+  }
+
+  async getAssetsList() {
+    return this.request<any[]>('/assets/list');
   }
 
   // Optional Twitter health endpoint (mentioned in Flask docs)
