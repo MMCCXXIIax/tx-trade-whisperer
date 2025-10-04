@@ -64,10 +64,14 @@ export function TXTradingDashboard() {
       const result = await apiClient.getPaperPortfolio(targetUserId);
       if (result.success && result.data) {
         setTrades(result.data as any);
+        console.log('✅ Paper trades loaded from backend');
+      } else {
+        console.warn('⚠️ Backend paper trading not available, using empty portfolio');
+        setTrades([]);
       }
     } catch (error) {
-      console.error('Failed to load trades:', error);
-      // Don't show error toast in this case as it might be due to backend issues
+      console.warn('⚠️ Paper trading backend unavailable, using empty portfolio:', error);
+      setTrades([]); // Empty state is fine - user can still see the interface
     }
   };
 

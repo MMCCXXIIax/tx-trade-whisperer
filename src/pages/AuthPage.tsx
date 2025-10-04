@@ -38,11 +38,9 @@ export default function AuthPage() {
   }, [navigate])
 
   const handleProfileSave = async (user: any) => {
-    // For now, we'll skip the backend profile save since it's causing issues
-    // and focus on the Supabase profile which is working
     try {
-      // Try to save/update the Supabase profile instead
-      const { error } = await supabase
+      // Primary: Save to Supabase profiles (this is working)
+      const { error: supabaseError } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
@@ -51,11 +49,13 @@ export default function AuthPage() {
           updated_at: new Date().toISOString()
         }, { onConflict: 'id' });
       
-      if (error) {
-        console.error('❌ Supabase profile save failed:', error);
+      if (supabaseError) {
+        console.warn('⚠️ Supabase profile save warning:', supabaseError);
+      } else {
+        console.log('✅ Supabase profile saved successfully');
       }
       
-      // Optionally try the backend save, but don't fail if it doesn't work
+      // Secondary: Try Flask backend save (optional, won't block login)
       try {
         const payload = {
           id: user.id,
@@ -65,14 +65,17 @@ export default function AuthPage() {
         }
         
         const result = await saveProfile(payload)
-        if (!result.success) {
+        if (result.success) {
+          console.log('✅ Backend profile saved successfully');
+        } else {
           console.warn('⚠️ Backend profile save failed (non-critical):', result.error)
         }
       } catch (backendError) {
         console.warn('⚠️ Backend profile save failed (non-critical):', backendError)
+        // This is OK - user can still use the app with Supabase profile
       }
     } catch (error) {
-      console.error('❌ Profile handling failed:', error)
+      console.warn('⚠️ Profile handling had issues but continuing with auth:', error)
     }
   }
 

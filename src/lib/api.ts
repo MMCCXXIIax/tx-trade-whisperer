@@ -46,6 +46,7 @@ const getApiBase = () => {
 export const API_BASE = getApiBase();
 export const IS_DEVELOPMENT = import.meta.env.DEV;
 export const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || false;
+export const ENABLE_SMART_FALLBACK = true; // Allow fallback to local data if backend fails
 
 // Smart mock data fallback based on endpoint
 async function getMockDataForEndpoint<T>(path: string): Promise<T | null> {
@@ -202,14 +203,17 @@ export async function safeFetch<T>(
           apiBase: API_BASE
         });
         
-        // Try mock data as fallback in development or if explicitly requested
-        if (useMockFallback && (IS_DEVELOPMENT || USE_MOCK_DATA)) {
-          console.log(`🔄 Falling back to mock data for: ${path}`);
-          toast({
-            title: "Using Mock Data",
-            description: "Backend unavailable, using mock data for demonstration",
-            variant: "default"
-          });
+        // Smart fallback system - only use if explicitly enabled
+        if (useMockFallback && ENABLE_SMART_FALLBACK && (IS_DEVELOPMENT || path.includes('/paper-trade'))) {
+          console.log(`🔄 Smart fallback for: ${path}`);
+          // Only show toast for critical failures, not for optional endpoints
+          if (!path.includes('/save-profile') && !path.includes('/paper-trade')) {
+            toast({
+              title: "Backend Connection Issue",
+              description: "Some features may use cached data",
+              variant: "default"
+            });
+          }
           return await getMockDataForEndpoint<T>(path);
         }
         

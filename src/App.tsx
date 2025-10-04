@@ -1,3 +1,4 @@
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import AuthPage from '@/pages/AuthPage'
@@ -6,8 +7,14 @@ import TXMainDashboard from '@/components/TXMainDashboard';
 import NotFoundPage from '@/pages/NotFound'
 import AuthLoading from '@/pages/AuthLoading' // public route
 import { Toaster } from '@/components/ui/toaster'
+import { logDeploymentInfo } from '@/lib/deploymentDetection'
 
 export default function App() {
+  // Log deployment info for debugging
+  React.useEffect(() => {
+    logDeploymentInfo();
+  }, []);
+
   return (
     <Router>
       <Routes>
