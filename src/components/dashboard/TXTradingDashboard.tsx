@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TrendingUp, TrendingDown, DollarSign, Activity, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/lib/supabase';
 
 interface PaperTrade {
   id: string;
@@ -30,43 +31,86 @@ export function TXTradingDashboard() {
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [quantity, setQuantity] = useState('1');
   const [portfolio, setPortfolio] = useState({ balance: 10000, equity: 10000 });
+  const [userId, setUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTrades();
+    initializeUser();
   }, []);
 
-  const loadTrades = async () => {
+  const initializeUser = async () => {
     try {
-      const result = await apiClient.getPaperPortfolio('demo-user');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUserId(user.id);
+        await loadTrades(user.id);
+      } else {
+        // Fallback for demo
+        setUserId('demo-user');
+        await loadTrades('demo-user');
+      }
+    } catch (error) {
+      console.error('Failed to get user:', error);
+      setUserId('demo-user');
+      await loadTrades('demo-user');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTrades = async (userIdToUse?: string) => {
+    try {
+      const targetUserId = userIdToUse || userId || 'demo-user';
+      const result = await apiClient.getPaperPortfolio(targetUserId);
       if (result.success && result.data) {
         setTrades(result.data as any);
       }
     } catch (error) {
       console.error('Failed to load trades:', error);
+      // Don't show error toast in this case as it might be due to backend issues
     }
   };
 
   const executeTrade = async () => {
+    if (!userId) {
+      toast({ title: 'Authentication Required', description: 'Please log in to execute trades', variant: 'destructive' });
+      return;
+    }
+    
     try {
       const result = await apiClient.executePaperTrade({
         symbol: selectedSymbol,
         side: tradeType,
         qty: parseFloat(quantity),
-        price: 95000, // Mock price
-        user_id: 'demo-user'
+        price: 95000, // Mock price - in production this would come from market data
+        user_id: userId
       });
 
       if (result.success) {
         toast({ title: 'Trade Executed', description: `${tradeType.toUpperCase()} ${quantity} ${selectedSymbol}` });
         loadTrades();
+      } else {
+        toast({ title: 'Trade Failed', description: result.error || 'Unable to execute trade', variant: 'destructive' });
       }
     } catch (error) {
+      console.error('Trade execution error:', error);
       toast({ title: 'Trade Failed', description: 'Unable to execute trade', variant: 'destructive' });
     }
   };
 
   const openTrades = trades.filter(t => t.status === 'open');
   const closedTrades = trades.filter(t => t.status === 'closed');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading trading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

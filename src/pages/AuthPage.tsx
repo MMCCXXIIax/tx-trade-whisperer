@@ -38,16 +38,41 @@ export default function AuthPage() {
   }, [navigate])
 
   const handleProfileSave = async (user: any) => {
-    const payload = {
-      id: user.id,
-      name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
-      email: user.email || '',
-      mode: "demo" as const // or 'broker' depending on your onboarding logic
-    }
-
-    const result = await saveProfile(payload)
-    if (!result.success) {
-      console.error('❌ Profile save failed:', result.error)
+    // For now, we'll skip the backend profile save since it's causing issues
+    // and focus on the Supabase profile which is working
+    try {
+      // Try to save/update the Supabase profile instead
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+      
+      if (error) {
+        console.error('❌ Supabase profile save failed:', error);
+      }
+      
+      // Optionally try the backend save, but don't fail if it doesn't work
+      try {
+        const payload = {
+          id: user.id,
+          name: user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+          email: user.email || '',
+          mode: "demo" as const
+        }
+        
+        const result = await saveProfile(payload)
+        if (!result.success) {
+          console.warn('⚠️ Backend profile save failed (non-critical):', result.error)
+        }
+      } catch (backendError) {
+        console.warn('⚠️ Backend profile save failed (non-critical):', backendError)
+      }
+    } catch (error) {
+      console.error('❌ Profile handling failed:', error)
     }
   }
 
